@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (nextStepElement) {
             nextStepElement.classList.add('active');
             applyCentering(stepNumber);
+            if (stepNumber === 3) {
+                forceOpenAvailability(); // ALWAYS show Open Now on final step
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
@@ -127,12 +130,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     
+    let availabilityInterval; // store interval so we can stop it when forcing open
+
     function updateTime() {
         const now = new Date();
         const hours = now.getHours();
         const isOpen = hours >= 8 && hours < 18;
 
         document.querySelectorAll('.availability').forEach(element => {
+            if (element.classList.contains('forced-open')) return; // skip if forced
             if (isOpen) {
                 element.innerHTML =
                     '<span class="badge open">Open Now</span><span class="dot"></span>' +
@@ -147,8 +153,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function forceOpenAvailability() {
+        document.querySelectorAll('.availability').forEach(element => {
+            element.classList.add('forced-open');
+            element.innerHTML =
+                '<span class="badge open">Open Now</span>' +
+                '<span class="wait"><strong>&lt; 1 min</strong> avg wait</span>' +
+                '<small>(Last consults today end at 6:00 PM ET)</small>';
+        });
+        if (availabilityInterval) clearInterval(availabilityInterval);
+    }
+
     updateTime();
-    setInterval(updateTime, 60000);
+    availabilityInterval = setInterval(updateTime, 60000);
 
     
     window.showDisclaimer = function() {
