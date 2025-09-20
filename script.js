@@ -4,6 +4,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentQuestion = 0; 
     let selectedAnswers = {};
 
+    // Helper: eligibility (any "no" -> not eligible)
+    const isEligible = () =>
+        selectedAnswers.q1 === 'yes' &&
+        selectedAnswers.q2 === 'yes' &&
+        selectedAnswers.q3 === 'yes';
+
     const mainContainer = document.querySelector('.main-container');
 
     function applyCentering(stepNumber) {
@@ -180,15 +186,14 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 fadeToLoadingStep();
                 currentQuestion = 3;
-                
-                
+
                 setTimeout(() => {
                     updateLoadingText();
                     currentQuestion = 4;
-                    
-                    
+
                     setTimeout(() => {
-                        showStep(6);
+                        const targetStep = isEligible() ? 6 : 7;
+                        showStep(targetStep);
                         currentQuestion = 5;
                     }, 2000);
                 }, 2000);
@@ -196,7 +201,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    
+    // Restart handler for Step 7
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'restartBtn') {
+            window.location.reload();
+        }
+    });
+
     updateProgressBar();
     applyCentering(1);
 
