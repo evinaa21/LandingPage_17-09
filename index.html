@@ -11,10 +11,6 @@
 </head>
 <body>
 
-    <div class="progress-container">
-        <div id="progressBar" class="progress-bar"></div>
-    </div>
-
     <main class="main-container">
         
         <div id="step1" class="step active">
@@ -30,7 +26,14 @@
                     </div>
                 </header>
                 <div class="card-body">
-                    <h2>Just answer 2 quick questions.</h2>
+                    <div class="step-status">
+                        <div id="stepLabel" class="step-status__label">STEP 1 OF 6</div>
+                        <div class="step-status__bar">
+                            <div id="inlineProgressBar" class="step-status__bar-fill"></div>
+                        </div>
+                    </div>
+
+                    <h2>Just answer 3 quick questions.</h2>
                     <div class="question-group">
                         <div class="question" id="q1">
                             <label>Do you live in the United States? *</label>
@@ -46,32 +49,7 @@
                                 <button class="option-btn" data-value="no">No</button>
                             </div>
                         </div>
-                    </div>
-                    <p class="safety-text">Safe to continue —CuraDebt is licensed, bonded, BSI certified & AADR accredited.</p>
-                </div>
-                <footer class="card-footer">
-                    Need help now? <a href="tel:833-632-0453" class="phone-link">📞 833-632-0453 (Tap to call)</a>
-                </footer>
-            </div>
-        </div>
-
-        
-        <div id="step2" class="step">
-            <div class="card">
-                <header class="card-header">
-                    <h1>Check Eligibility to Lower Your Payment & Debt in Just 60 Seconds</h1>
-                    <div class="trust-bar">
-                        <span>BBB A+ & Accredited</span>
-                        <span>23+ Years</span>
-                        <span>1,600+ ★★★★★</span>
-                        <span>No Upfront Fees</span>
-                        <span>Not a Loan</span>
-                    </div>
-                </header>
-                <div class="card-body">
-                    <h2>Final Question</h2>
-                    <div class="question-group">
-                        <div class="question" id="q3">
+                        <div class="question hidden" id="q3">
                             <label>Are you receiving employment, retirement or other income? *</label>
                             <div class="options-grid">
                                 <button class="option-btn" data-value="yes">Yes</button>
@@ -87,11 +65,11 @@
             </div>
         </div>
 
-        
-        <div id="step3" class="step">
+        <!-- Step 4: Reviewing answers -->
+        <div id="step4" class="step">
             <div class="card">
-                <header class="card-header success">
-                    <h1 class="all-caps">YOU APPEAR TO BE ELIGIBLE TO LOWER YOUR PAYMENT & DEBT!</h1>
+                <header class="card-header">
+                    <h1>Check Eligibility to Lower Your Payment & Debt in Just 60 Seconds</h1>
                     <div class="trust-bar">
                         <span>BBB A+ & Accredited</span>
                         <span>23+ Years</span>
@@ -100,33 +78,85 @@
                         <span>Not a Loan</span>
                     </div>
                 </header>
-                <div class="card-body final-mobile-pack">
-                    <p class="reassurance-text">You're minutes away from feeling relief from burdensome debt.</p>
-                    <div class="final-cta-box emphasized">
-                        <div class="final-step-head all-caps">FINAL STEP: TAP BELOW TO CONFIRM FINAL ELIGIBILITY</div>
-                        <p class="final-desc">(In as little as 240 seconds, you’ll have an estimate  of how many thousands of dollars you could put back in your pocket and your new lower payment.)</p>
-                        <a href="tel:833-635-0131" class="cta-button">
-                            833-635-0131
-                        </a>
-                        <div class="availability fancy-availability">
-                            <span class="badge open">Open Now</span>
-                            <span class="wait"><strong>&lt; 1 min</strong> avg wait</span>
-                            <small>(Last consults today end at 6:00 PM ET)</small>
+                <div class="card-body">
+                    <div class="step-status">
+                        <div class="step-status__label">STEP 4 OF 6</div>
+                        <div class="step-status__bar">
+                            <div class="step-status__bar-fill" style="width: 66%;"></div>
                         </div>
-                        <p class="urgency-text"><strong>IMPORTANT:</strong> Don't wait for another statement to hit — discover your options today.</p>
                     </div>
 
-                    
+                    <div class="loading-step">
+                        <h2>Reviewing answers...</h2>
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Matching with best option -->
+        <div id="step5" class="step">
+            <div class="card">
+                <header class="card-header">
+                    <h1>Check Eligibility to Lower Your Payment & Debt in Just 60 Seconds</h1>
+                    <div class="trust-bar">
+                        <span>BBB A+ & Accredited</span>
+                        <span>23+ Years</span>
+                        <span>1,600+ ★★★★★</span>
+                        <span>No Upfront Fees</span>
+                        <span>Not a Loan</span>
+                    </div>
+                </header>
+                <div class="card-body">
+                    <div class="step-status">
+                        <div class="step-status__label">STEP 5 OF 6</div>
+                        <div class="step-status__bar">
+                            <div class="step-status__bar-fill" style="width: 83%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="loading-step">
+                        <h2>Matching with best option...</h2>
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- step 6 simplified to only the requested content -->
+        <div id="step6" class="step">
+            <div class="card">
+                <header class="card-header success">
+                    <!-- hidden via CSS so only the requested content shows -->
+                </header>
+                <div class="card-body final-mobile-pack">
+                    <p class="reassurance-text">You’re minutes away from feeling relief from burdensome debt.</p>
+
+                    <div class="main-cta-section">
+                        <div class="final-step-head all-caps">FINAL STEP: TAP BELOW TO CONFIRM FINAL ELIGIBILITY</div>
+                        <p class="final-desc">(In as little as 240 seconds, you’ll have an estimate  of how many thousands of dollars you could put back in your pocket and your new lower payment.)</p>
+
+                        <a href="tel:833-635-0131" class="cta-button large-phone">833-635-0131</a>
+
+                        <!-- static availability text so JS won’t replace it -->
+                        <div class="availability availability-compact" data-static="true">
+                            <span class="line">Open now • Average wait: under 1 minute</span>
+                            <span class="sub">(Last consults today end at 6:00 PM ET)</span>
+                        </div>
+
+                        <p class="urgency-text"><strong>IMPORTANT:</strong> Don’t wait for another statement to hit — discover  your options today.</p>
+                    </div>
+
                     <div class="why-trust">
                         <h4>Why Thousands Trust CuraDebt:</h4>
                         <ul>
-                            <li>BBB A+ & Accredited • 23+ years helping Americans</li>
-                            <li>1,600+ verified 5-star reviews • Hundreds of settlement letters</li>
+                            <li>BBB A+ & Accredited  • 23+ years helping Americans</li>
+                            <li>1,600+ verified 5-star reviews  • Hundreds of settlement letters</li>
                         </ul>
                     </div>
 
                     <div class="testimonial">
-                        <blockquote>"Melvin answered every question and made the process simple."</blockquote>
+                        <blockquote>“Melvin answered every question and made the process simple.”</blockquote>
                         <cite>– Lisa F.</cite>
                     </div>
                 </div>
