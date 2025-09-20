@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const displayStep = Math.min(currentQuestion + 1, totalQuestions);
         const progress = (currentQuestion / totalQuestions) * 100;
 
-        // Update inline progress in the questions card (new)
+        
         const inlineBar = document.getElementById('inlineProgressBar');
         const stepLabel = document.getElementById('stepLabel');
         if (inlineBar) inlineBar.style.width = `${progress}%`;
@@ -42,11 +42,11 @@ document.addEventListener('DOMContentLoaded', function() {
             nextStepElement.classList.add('active');
             applyCentering(stepNumber);
             if (stepNumber === 6) {
-                // Hide the question container on the final step to reclaim space
+                
                 const questionGroup = document.querySelector('.question-group');
                 if(questionGroup) questionGroup.style.display = 'none';
                 
-                // Animate the final progress bar to 100%
+                
                 setTimeout(() => {
                     const finalProgressBar = document.querySelector('.final-progress__bar-fill');
                     if (finalProgressBar) {
@@ -54,25 +54,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 200);
                 
-                forceOpenAvailability(); // ALWAYS show Open Now on final step
+                forceOpenAvailability(); 
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    // Function to fade to loading step (same as question transitions)
+    
     const fadeToLoadingStep = () => {
         const q3 = document.getElementById('q3');
         const step4 = document.getElementById('step4');
         
-        // Fade out question 3
+        
         q3.classList.add('fading-out');
         
         setTimeout(() => {
             q3.classList.add('hidden');
             q3.classList.remove('fading-out');
             
-            // Show step 4 loading content in the same container
+            
             const questionGroup = document.querySelector('.question-group');
             if (questionGroup) {
                 questionGroup.innerHTML = `
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 questionGroup.style.transform = 'translateY(0)';
             }
             
-            // Update progress bar and step label
+            
             const inlineBar = document.getElementById('inlineProgressBar');
             const stepLabel = document.getElementById('stepLabel');
             if (inlineBar) inlineBar.style.width = '66%';
@@ -94,25 +94,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 400);
     };
 
-    // Function to smoothly update loading text (step 4 to 5)
+    
     const updateLoadingText = () => {
         const questionGroup = document.querySelector('.question-group');
         const h2Element = questionGroup.querySelector('.loading-step h2');
         
-        // Fade out text
+        
         h2Element.style.opacity = '0';
         
         setTimeout(() => {
-            // Update content
+            
             h2Element.textContent = 'Matching with best option...';
             
-            // Update progress bar and step label
+            
             const inlineBar = document.getElementById('inlineProgressBar');
             const stepLabel = document.getElementById('stepLabel');
             if (inlineBar) inlineBar.style.width = '83%';
             if (stepLabel) stepLabel.textContent = 'STEP 5 OF 6';
             
-            // Fade back in
+            
             h2Element.style.opacity = '1';
         }, 300);
     };
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentQuestion = 2;
             updateProgressBar();
             
-            // Use fadeToNextQuestion instead of showStep for consistent transition
+            
             fadeToNextQuestion(q2, q3);
         });
     });
@@ -176,17 +176,17 @@ document.addEventListener('DOMContentLoaded', function() {
             currentQuestion = 3;
             updateProgressBar();
             
-            // Fade transition to loading step (same as question transitions)
+            
             setTimeout(() => {
                 fadeToLoadingStep();
                 currentQuestion = 3;
                 
-                // After 2 seconds, update text to step 5 content
+                
                 setTimeout(() => {
                     updateLoadingText();
                     currentQuestion = 4;
                     
-                    // After another 2 seconds, move to final step with full page transition
+                    
                     setTimeout(() => {
                         showStep(6);
                         currentQuestion = 5;
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     
-    let availabilityInterval; // store interval so we can stop it when forcing open
+    let availabilityInterval; 
 
     function updateTime() {
         const now = new Date();
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const isOpen = hours >= 8 && hours < 18;
 
         document.querySelectorAll('.availability').forEach(element => {
-            // do not touch static availability on the final page
+            
             if (element.dataset.static === 'true') return;
             if (element.classList.contains('forced-open')) return;
             if (isOpen) {
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function forceOpenAvailability() {
         document.querySelectorAll('.availability').forEach(element => {
-            // do not touch static availability on the final page
+            
             if (element.dataset.static === 'true') return;
             element.classList.add('forced-open');
             element.innerHTML =
