@@ -926,6 +926,34 @@ body {
     .availability-compact .sub { font-size: 0.75rem; }
     #step6 .final-step-head { font-size: 1.1rem; }
     #step6 .final-desc { font-size: 0.9rem; }
+
+    /* Reduce padding on final step card body to prevent overflow */
+    #step6 .card-body {
+        padding: 1.5rem 0.75rem;
+    }
+
+    /* Constrain card width on mobile to prevent overflow */
+    .card {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Center the card on the final step */
+    #step6 .card {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Make the call button smaller on mobile */
+    #step6 .cta-button.large-phone {
+        font-size: 1.25rem; /* Made button smaller */
+        padding: 0.9rem;
+    }
+
+    /* Make the urgency text slightly smaller on mobile */
+    #step6 .urgency-text {
+        font-size: 0.85rem !important;
+    }
 }
 
 /* Mobile-specific override for BBB seal centering */
