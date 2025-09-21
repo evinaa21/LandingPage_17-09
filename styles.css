@@ -29,6 +29,16 @@ body {
     font-size: 16px;
 }
 
+.site-header {
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.logo {
+    max-width: 220px;
+    height: auto;
+}
+
 
 .card-body p {
     font-size: 1rem;
@@ -366,6 +376,17 @@ body {
     color: var(--text-light);
     border-color: #0004ff;
     box-shadow: 0 6px 20px rgba(35, 62, 152, 0.4);
+}
+
+.bbb-single-item {
+    margin: -1.5rem auto 0; /* Reduced top margin to bring it closer */
+    display: flex;
+    justify-content: center;
+}
+
+/* Increase size of the BBB seal on the first step */
+#step1 .bbb-single-item .bbb-scale {
+    --seal-height: clamp(80px, 10vw, 115px);
 }
 
 .safety-text {
@@ -881,6 +902,15 @@ body {
     #step6 .final-desc { font-size: 0.9rem; }
 }
 
+/* Mobile-specific override for BBB seal centering */
+@media (max-width: 767px) {
+     #step1 .bbb-scale .bbb-embed,
+    #step6 .bbb-scale .bbb-embed {
+        left:35px !important;
+        transform: scale(calc(var(--seal-height) / var(--bbb-native-h))) translateX(-50%) !important;
+    }
+}
+
 .bbb-cta-item {
     margin: 1.75rem auto 0;
     display: flex;
@@ -956,7 +986,7 @@ body {
 .bbb-scale .bbb-embed {
     position: absolute;
     top: -100 px; 
-    left: 50px;
+    left: 80px;
     width: calc(var(--bbb-native-w) * 2px);
     height: calc(var(--bbb-native-h) * 2px);
     border: 0;
