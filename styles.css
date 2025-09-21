@@ -61,8 +61,8 @@ body {
 
 @media (max-width: 767px) {
     #step1 .card-header h1 {
-        font-size: 1.45rem !important; /* Made H1 bigger on mobile */
-        line-height: 1.25;
+        font-size: 1.55rem !important; /* Slightly smaller from 1.6rem */
+        line-height: 1.2; /* Tighter line height to keep it compact */
     }
     #step1 .question label {
         font-size: 1.3rem; /* Smaller question text */
@@ -261,8 +261,8 @@ body {
 
 @media (max-width: 767px) {
     #step1 .card-header h1 {
-        font-size: 1.45rem !important; /* Made H1 bigger on mobile */
-        line-height: 1.25;
+        font-size: 1.55rem !important; /* Slightly smaller from 1.6rem */
+        line-height: 1.2; /* Tighter line height to keep it compact */
     }
     #step1 .question label {
         font-size: 1.3rem; /* Smaller question text */
@@ -693,7 +693,7 @@ body {
 
 @media (max-width: 767px) {
     #step1 .card-header h1 {
-        font-size: 1.75rem !important;
+        font-size: 1.5rem !important;
         line-height: 1.25;
     }
     #step1 .question label {
@@ -1090,11 +1090,12 @@ body {
         max-width: 150px; /* Smaller logo on very small screens */
     }
     #step1 .card-header {
-        padding: 1rem 0.5rem; /* Reduced side padding to give title more space */
+        padding: 1rem 0.25rem; /* Reduced side padding more to give title even more space */
     }
     #step1 .card-header h1 {
-        font-size: 1.25rem !important; /* Made H1 bigger on small screens */
+        font-size: 1.35rem !important; /* Slightly smaller from 1.4rem */
         margin-bottom: 0.5rem;
+        line-height: 1.15; /* Tighter line height for small screens */
     }
     #step1 .question label {
         font-size: 1.1rem; /* Smaller question text */
