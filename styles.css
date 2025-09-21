@@ -61,9 +61,21 @@ body {
 
 @media (max-width: 767px) {
     #step1 .card-header h1 {
-        font-size: 1.6rem !important;
+        font-size: 1.45rem !important; /* Made H1 bigger on mobile */
         line-height: 1.25;
+    }
+    #step1 .question label {
+        font-size: 1.3rem; /* Smaller question text */
+        margin: 0.75rem auto 0.75rem;
+    }
+    .step-status {
         margin-bottom: 1rem;
+    }
+    .step-status__bar { height: 10px; }
+    #step1 .option-btn {
+        padding: 1rem 0.75rem;
+        font-size: 1rem;
+        border-radius: 9999px;
     }
 }
 
@@ -249,11 +261,24 @@ body {
 
 @media (max-width: 767px) {
     #step1 .card-header h1 {
-        font-size: 1.6rem !important;
+        font-size: 1.45rem !important; /* Made H1 bigger on mobile */
         line-height: 1.25;
+    }
+    #step1 .question label {
+        font-size: 1.3rem; /* Smaller question text */
+        margin: 0.75rem auto 0.75rem;
+    }
+    .step-status {
         margin-bottom: 1rem;
     }
+    .step-status__bar { height: 10px; }
+    #step1 .option-btn {
+        padding: 1rem 0.75rem;
+        font-size: 1rem;
+        border-radius: 9999px;
+    }
 }
+
 
 .trust-bar {
     display: flex;
@@ -287,7 +312,7 @@ body {
 
 
 @media (max-width: 767px) {
-    .trust-bar { gap: .2rem .6rem; font-size: .78rem; }
+    .trust-bar { gap: .2rem .6rem; font-size: .5rem; }
     .trust-bar span::before { font-size: .85rem; margin-right: .35rem; }
 }
 
@@ -668,7 +693,8 @@ body {
 
 @media (max-width: 767px) {
     #step1 .card-header h1 {
-        font-size: 1.3rem;
+        font-size: 1.65rem !important;
+        line-height: 1.25;
     }
     #step1 .question label {
         font-size: 1.3rem;
@@ -1008,7 +1034,7 @@ body {
     .review-item:nth-child(1) { margin-right: 0; }
     .review-item:nth-child(4) { margin-right: 0; }
     .review-item img {
-        --seal-height: clamp(100px, 25vw, 140px);
+        --seal-height: clamp(120px, 30vw, 180px); /* Made logos bigger on mobile */
     }
 }
 
@@ -1017,9 +1043,12 @@ body {
     .logo {
         max-width: 150px; /* Smaller logo on very small screens */
     }
+    #step1 .card-header {
+        padding: 1rem 0.5rem; /* Reduced side padding to give title more space */
+    }
     #step1 .card-header h1 {
-        font-size: 1.1rem !important; /* Smaller title */
-        margin-bottom: 0.75rem;
+        font-size: 1.25rem !important; /* Made H1 bigger on small screens */
+        margin-bottom: 0.5rem;
     }
     #step1 .question label {
         font-size: 1.1rem; /* Smaller question text */
