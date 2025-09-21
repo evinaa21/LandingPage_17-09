@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentQuestion = 0; 
     let selectedAnswers = {};
 
-    // Helper: eligibility (any "no" -> not eligible)
+    
     const isEligible = () =>
         selectedAnswers.q1 === 'yes' &&
         selectedAnswers.q2 === 'yes' &&
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Restart handler for Step 7
+    
     document.addEventListener('click', (e) => {
         if (e.target && e.target.id === 'restartBtn') {
             window.location.reload();

@@ -1,7 +1,7 @@
 :root {
     --primary-color: #005A9C;
     --success-color: #0037ff;
-    --danger-color: #dc3545; /* added */
+    --danger-color: #dc3545;
     --text-dark: #212529;
     --text-light: #f8f9fa;
     --bg-light: #f0f4f8;
@@ -29,14 +29,14 @@ body {
     font-size: 16px;
 }
 
-/* --- Global typography & spacing harmonization --- */
+
 .card-body p {
     font-size: 1rem;
     color: #343a40;
     margin: 0.75rem 0 0.75rem;
 }
 
-/* Larger, clearer headers with better spacing */
+
 .card-header {
     padding: 2rem 1.5rem 1.75rem;
 }
@@ -48,7 +48,7 @@ body {
     letter-spacing: 0.2px;
 }
 
-/* Step header: slightly larger on mobile too */
+
 @media (max-width: 767px) {
     #step1 .card-header h1 {
         font-size: 1.6rem !important;
@@ -57,14 +57,14 @@ body {
     }
 }
 
-/* Step body headline — keep hierarchy clear */
+
 .card-body h2 {
     font-size: clamp(1.2rem, 2.6vw, 1.35rem);
     margin-bottom: 1.25rem;
     color: var(--primary-color);
 }
 
-/* Progress label spacing */
+
 .step-status {
     margin-bottom: 1.1rem;
 }
@@ -72,12 +72,12 @@ body {
     letter-spacing: 0.09em;
 }
 
-/* Buttons: slight spacing refinement */
+
 .option-btn {
     letter-spacing: 0.2px;
 }
 
-/* --- Final step cleanup (step 6) --- */
+
 #step6 .reassurance-text {
     font-size: clamp(1.05rem, 2.2vw, 1.2rem);
     color: #243447;
@@ -98,7 +98,7 @@ body {
 
 #step6 .final-desc {
     color: #5c6770;
-    font-size: 0.8rem; /* was 0.95rem */
+    font-size: 0.8rem;
     line-height: 1.55;
     margin: 0 0 1rem 0;
 }
@@ -110,7 +110,7 @@ body {
     letter-spacing: 0.4px;
 }
 
-/* Availability line on final step */
+
 #step6 .availability-compact .line {
     font-size: 0.95rem;
     color: #0e1885;
@@ -120,7 +120,7 @@ body {
     color: #6c757d;
 }
 
-/* Why-trust section: consistent bullets and spacing */
+
 #step6 .why-trust {
     margin: 1.5rem 0 1.25rem;
     padding: 1.25rem 1rem;
@@ -142,13 +142,13 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    padding: 0;                 /* reset any inherited left padding */
+    padding: 0;                
     line-height: 1.55;
     font-size: 0.95rem;
     color: #2b2f33;
 }
 
-/* Fixed-width check, centered, nudged to align with first text line */
+
 #step6 .why-trust li::before {
     content: "✓";
     display: inline-block;
@@ -160,7 +160,7 @@ body {
     transform: translateY(0.1em);
 }
 
-/* Testimonial: slightly larger quote and tighter spacing */
+
 #step6 .testimonial {
     margin-top: 1.25rem;
     padding: 1.25rem;
@@ -178,7 +178,7 @@ body {
     font-weight: 600;
 }
 
-/* Loading step typography match */
+
 .loading-step h2 {
     font-size: clamp(1.25rem, 2.8vw, 1.5rem);
     font-weight: 700;
@@ -236,7 +236,7 @@ body {
     letter-spacing: 0.2px;
 }
 
-/* Mobile override — ensure it stays big */
+
 @media (max-width: 767px) {
     #step1 .card-header h1 {
         font-size: 1.6rem !important;
@@ -262,7 +262,7 @@ body {
     white-space: nowrap;
 }
 
-/* Add a bullet before each item, inherit current text color */
+
 .trust-bar span::before {
     content: "•";
     font-weight: 800;
@@ -273,7 +273,7 @@ body {
     opacity: 0.95;
 }
 
-/* Optional: slightly tighter on mobile */
+
 @media (max-width: 767px) {
     .trust-bar { gap: .25rem .75rem; }
     .trust-bar span::before { font-size: .95rem; margin-right: .4rem; }
@@ -656,7 +656,7 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    padding: 0;                 /* reset any inherited left padding */
+    padding: 0;                
     line-height: 1.55;
     font-size: 0.95rem;
     color: #2b2f33;
@@ -699,7 +699,7 @@ body {
     text-decoration: underline;
 }
 
-/* Platform disclaimer (Facebook/Meta, Google, etc.) */
+
 .platform-disclaimer {
     margin: 0.25rem auto 0.6rem;
     max-width: 920px;
@@ -801,10 +801,10 @@ body {
     font-weight: 800;
 }
 
-/* Mobile override — ensure it stays big */
+
 @media (max-width: 767px) {
     #step1 .card-header h1 {
-        font-size: 1.75rem !important; /* was 2rem */
+        font-size: 1.75rem !important;
         line-height: 1.25;
     }
 }
@@ -1059,48 +1059,42 @@ body {
 #step6 .reassurance-text { margin-bottom: 1rem; }
 
 
-/* Step 7 (Not Eligible) styling */
-#step7 .reassurance-text.negative {
-    text-align: center;
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #42505a;
-    margin-bottom: 1rem;
-}
-#step7 .main-cta-section {
-    border-color: #ffc9c9;
-    background: #fff5f5;
-}
-#step7 .final-step-head {
-    color: var(--danger-color);
-}
-.cta-button.large-phone.restart {
-    background-color: var(--primary-color);
-    border: 3px solid var(--primary-color);
-    box-shadow: 0 8px 24px rgba(0, 90, 156, 0.25);
-    cursor: pointer;
-    appearance: none;
-}
-.cta-button.large-phone.restart:hover {
-    background-color: #004a7d;
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0, 90, 156, 0.35);
+
+#step6 .main-cta-section {
+    background: #ffffff;                
+    border-color: #e5e7eb;              
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
 }
 
-/* Bullet mark alignment (remove vertical wobble) */
-.why-trust li::before,
-#step6 .why-trust li::before {
-    transform: none;           /* override previous translateY */
-    margin-top: 0.15em;        /* gentle baseline nudge */
-    width: 1.1em;
-    text-align: center;
+#step6 .final-step-head {
+    color: #111827;                     
+    font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+    letter-spacing: 0.4px;
 }
 
-/* Smaller bracket text and bullets on mobile (Step 6 & 7) */
+#step6 .final-desc {
+    color: #374151;                     
+    font-size: 0.95rem;                 
+    line-height: 1.6;
+}
+
+#step6 .availability-compact .line {
+    color: #111827;
+    font-weight: 700;
+}
+#step6 .availability-compact .sub {
+    color: #4b5563;
+}
+
+
+.urgency-text {
+    color: #b91c1c !important;          
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+}
+
+
 @media (max-width: 767px) {
-    #step6 .final-desc,
-    #step7 .final-desc { font-size: 0.75rem; line-height: 1.5; }
-    #step6 .why-trust li,
-    #step7 .why-trust li { font-size: 0.9rem; }
-    .availability-compact .sub { font-size: 0.75rem; }
+    #step6 .final-step-head { font-size: 1.1rem; }
+    #step6 .final-desc { font-size: 0.9rem; }
 }
