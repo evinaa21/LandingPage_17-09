@@ -693,7 +693,7 @@ body {
 
 @media (max-width: 767px) {
     #step1 .card-header h1 {
-        font-size: 1.65rem !important;
+        font-size: 1.75rem !important;
         line-height: 1.25;
     }
     #step1 .question label {
@@ -932,10 +932,26 @@ body {
         padding: 1.5rem 0.75rem;
     }
 
+    /* Prevent horizontal overflow on final step */
+    #step6 .why-trust {
+        margin: 1.5rem 0 1.25rem;
+        padding: 1.25rem 0.5rem; /* Reduced horizontal padding */
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #step6 .main-cta-section {
+        margin: 1rem 0 1.25rem;
+        padding: 1.5rem 0.75rem; /* Reduced horizontal padding */
+        width: 100%;
+        box-sizing: border-box;
+    }
+
     /* Constrain card width on mobile to prevent overflow */
     .card {
         width: 100%;
         max-width: 100%;
+        overflow-x: hidden; /* Prevent any child elements from causing overflow */
     }
 
     /* Center the card on the final step */
@@ -948,6 +964,8 @@ body {
     #step6 .cta-button.large-phone {
         font-size: 1.25rem; /* Made button smaller */
         padding: 0.9rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     /* Make the urgency text slightly smaller on mobile */
