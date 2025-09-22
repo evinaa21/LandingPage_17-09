@@ -288,7 +288,7 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     gap: .25rem 1rem;
-    font-size: clamp(1.1rem, 1.6vw, 1.2rem);
+    font-size: clamp(.75rem, 1.2vw, .88rem);
     line-height: 1.2;
     opacity: .95;
     padding-top: .6rem;
@@ -306,7 +306,7 @@ body {
 .trust-bar span::before {
     content: "✓";
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: .9rem;
     line-height: 1;
     margin-right: .4rem;
     color: #28a745;
@@ -315,7 +315,7 @@ body {
 
 
 @media (max-width: 767px) {
-    .trust-bar { gap: .2rem .6rem; font-size: .5rem; }
+    .trust-bar { gap: .2rem .6rem; font-size: .57rem; }
     .trust-bar span::before { font-size: .85rem; margin-right: .35rem; }
 }
 
@@ -1018,7 +1018,7 @@ body {
 }
 
 .reviews-summary {
-    margin: 0 0 0.5rem 0; /* Reduced bottom margin to bring grid closer */
+    margin: 0 0 0.5rem 0;
     font-size: clamp(0.85rem, 2.2vw, 0.95rem);
     font-weight: 700;
     color: #374151;
@@ -1085,17 +1085,17 @@ body {
 
 @media (max-width: 480px) {
     .reviews-grid {
-        display: grid; /* Changed to grid layout */
-        grid-template-columns: 1fr 1fr; /* Create a 2-column grid */
-        gap: 0.5rem; /* Adjust gap between seals */
-        padding: 0 1rem; /* Add some side padding to the container */
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        padding: 0 1rem;
     }
     .review-item:nth-child(1) { margin-right: 0; }
     .review-item:nth-child(4) { margin-right: 0; }
     .review-item img {
-        --seal-height: clamp(110px, 30vw, 150px); /* Made seals much bigger */
-        width: 100%; /* Ensure image fills the grid cell width */
-        object-fit: cover; /* Allow image to be cropped to fill the space */
+        --seal-height: clamp(110px, 30vw, 150px);
+        width: 100%;
+        object-fit: cover;
     }
 }
 
