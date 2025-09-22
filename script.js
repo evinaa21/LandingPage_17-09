@@ -389,14 +389,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const startHref = window.location.href;
         const ua = navigator.userAgent || '';
 
-        const isStandalone = !!window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-        const isInIframe = window.top !== window.self;
-        const isAndroidWV = /\bwv\b/.test(ua);
-        const isIOSWV = /(iPhone|iPad|iPod).*AppleWebKit(?!.*Safari)/i.test(ua);
-        const isFB = /FBAN|FBAV|FB_IAB|Messenger/i.test(ua);
-        const isIG = /Instagram/i.test(ua);
-        const isTT = /TTWebView|TikTok/i.test(ua);
-
         const backTokens = new Set(['browser_back','mobile_back','browser_close_or_navigate']);
 
         const isLikelyUrl = (str) => {
@@ -409,26 +401,33 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 2) Back intent or no referrer but history exists
-        if (backTokens.has(intendedDestination) || (!document.referrer && history.length > 1)) {
+        // 2) Back intent - try going back first
+        if (backTokens.has(intendedDestination) && history.length > 1) {
             const steps = Math.min(history.length - 1, Math.max(1, guardPushCount + 1));
             history.go(-steps);
             setTimeout(() => {
-                if (window.location.href === startHref) attemptCloseOrBlank();
-            }, 300);
+                if (window.location.href === startHref) {
+                    attemptCloseOrBlank();
+                }
+            }, 500); // Increased timeout
             return;
         }
 
-        // 3) Use referrer if available
-        if (document.referrer && document.referrer !== startHref) {
-            window.location.assign(document.referrer);
-            return;
+        // 3) Use referrer if available and different from current page
+        if (document.referrer && document.referrer !== startHref && document.referrer !== window.location.href) {
+            try {
+                window.location.assign(document.referrer);
+                return;
+            } catch (e) {
+                console.log('Referrer navigation failed:', e);
+            }
         }
 
-        // 4) Fallbacks
+        // 4) Direct fallbacks
         attemptCloseOrBlank();
 
         function attemptCloseOrBlank() {
+            // Try messenger extensions first
             try {
                 if (typeof MessengerExtensions !== 'undefined') {
                     MessengerExtensions.requestCloseBrowser(function(){}, function(){});
@@ -436,18 +435,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (_) {}
 
-            if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { window.location.href = 'fb-messenger://'; return; }
-            if (/Instagram/i.test(ua)) { window.location.href = 'instagram://'; return; }
-            if (/WhatsApp/i.test(ua)) { window.location.href = 'whatsapp://app'; return; }
-            if (/TTWebView|TikTok/i.test(ua)) { window.location.href = 'snssdk1128://'; return; }
+            // App-specific schemes
+            if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { 
+                try { window.location.href = 'fb-messenger://'; return; } catch (_) {}
+            }
+            if (/Instagram/i.test(ua)) { 
+                try { window.location.href = 'instagram://'; return; } catch (_) {}
+            }
+            if (/WhatsApp/i.test(ua)) { 
+                try { window.location.href = 'whatsapp://app'; return; } catch (_) {}
+            }
+            if (/TTWebView|TikTok/i.test(ua)) { 
+                try { window.location.href = 'snssdk1128://'; return; } catch (_) {}
+            }
 
+            // Window close attempts
             try {
-                if (window.opener) { window.close(); return; }
-                window.open('', '_self'); window.close();
+                if (window.opener) { 
+                    window.close(); 
+                    return; 
+                }
             } catch (_) {}
 
-            try { window.location.replace('about:blank'); }
-            catch (_) { if (history.length > 1) history.back(); }
+            try {
+                window.open('', '_self'); 
+                window.close();
+            } catch (_) {}
+
+            // Final fallbacks
+            try { 
+                window.location.replace('about:blank'); 
+            } catch (_) { 
+                try {
+                    window.location.href = 'about:blank';
+                } catch (_) {
+                    // Last resort - go back if possible
+                    if (history.length > 1) {
+                        history.back();
+                    } else {
+                        // Hide the modal and let user manually navigate
+                        console.log('All exit methods failed - user must manually navigate');
+                    }
+                }
+            }
         }
     });
     
