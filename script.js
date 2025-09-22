@@ -297,6 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const closeBtn = document.getElementById('exitClose');
     const dismissBtn = document.getElementById('exitDismiss');
+    const leaveBtn = document.getElementById('exitLeave');
     
     if (!closeBtn || !dismissBtn) {
         console.log('Modal buttons not found');
@@ -561,23 +562,53 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
+    leaveBtn.addEventListener('click', () => {
+        isLeavingAllowed = true;
+        hideExitModal();
+        // Actually let them leave the site
+        window.history.back();
+    });
+    
     console.log('Exit intent system initialized');
 })();
 
 
 function startLiveChat() {
     if (typeof gtag !== 'undefined') {
-        gtag('event', 'exit_intent_whatsapp_click', {
+        gtag('event', 'exit_intent_chat_click', {
             event_category: 'conversion',
-            event_label: 'mobile_exit_to_whatsapp'
+            event_label: 'exit_intent_to_chat'
         });
     }
-    
+   
     document.getElementById('exitModal').classList.remove('show');
     document.body.style.overflow = '';
     
-    const phoneNumber = '18336350131';
-    const message = encodeURIComponent("Hi! I'm interested in learning about debt relief options. Can you help me check my eligibility?");
-        const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
-        window.open(whatsappURL, '_blank');
+ 
+    if (typeof MessengerExtensions !== 'undefined') {
+       
+        MessengerExtensions.requestCloseBrowser(function success() {
+            
+        }, function error(err) {
+            
+            openCrispChat();
+        });
+    } else if (window.location.hostname.includes('curadebt.com')) {
+        
+        openCrispChat();
+    } else {
+        
+        window.open('https://www.curadebt.com/chat', '_blank');
     }
+}
+
+
+function openCrispChat() {
+    if (typeof $crisp !== 'undefined') {
+        $crisp.push(["do", "chat:open"]);
+        $crisp.push(["do", "message:send", ["text", "Hi! I'm interested in learning about debt relief options. Can you help me check my eligibility?"]]);
+    } else {
+     
+        window.open('https://www.curadebt.com/contact', '_blank');
+    }
+}
