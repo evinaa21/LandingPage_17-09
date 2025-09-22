@@ -285,3 +285,206 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 });
+
+// Add this JavaScript to your script.js or in a separate script tag
+(function() {
+    const modal = document.getElementById('exitModal');
+    const closeBtn = document.getElementById('exitClose');
+    const dismissBtn = document.getElementById('exitDismiss');
+    
+    // Session tracking to show only once
+    const SHOWN_KEY = 'curadebt_exit_shown_v1';
+    let hasShown = sessionStorage.getItem(SHOWN_KEY) === '1';
+    let isLeavingAllowed = false;
+    
+    // Don't show if already shown this session
+    if (hasShown) return;
+    
+    function showExitModal() {
+        if (hasShown) return;
+        
+        hasShown = true;
+        sessionStorage.setItem(SHOWN_KEY, '1');
+        
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        
+        // Focus the first button for accessibility
+        modal.querySelector('.btn').focus();
+        
+        // Track the popup show event (for analytics)
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'exit_intent_popup_shown', {
+                event_category: 'engagement',
+                event_label: 'mobile_exit_intent'
+            });
+        }
+    }
+    
+    function hideExitModal() {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+    
+    // Close modal handlers
+    closeBtn.addEventListener('click', hideExitModal);
+    dismissBtn.addEventListener('click', hideExitModal);
+    
+    // Click outside to close
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.classList.contains('exit-modal__overlay')) {
+            hideExitModal();
+        }
+    });
+    
+    // Escape key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            hideExitModal();
+        }
+    });
+    
+    // 1. BACK BUTTON EXIT INTENT
+    function setupBackButtonTrap() {
+        // Push a dummy state so back button triggers our handler first
+        const dummyState = { exitGuard: true };
+        history.pushState(dummyState, '');
+        
+        window.addEventListener('popstate', function(e) {
+            if (!isLeavingAllowed && !hasShown) {
+                // Show modal instead of leaving
+                showExitModal();
+                // Push the state back so they can leave after closing modal
+                history.pushState(dummyState, '');
+            }
+        });
+    }
+    
+    // 2. FAST UPWARD SCROLL (pre-exit behavior)
+    let lastScrollY = window.scrollY;
+    let lastScrollTime = Date.now();
+    
+    function handleScroll() {
+        if (hasShown) return;
+        
+        const currentY = window.scrollY;
+        const currentTime = Date.now();
+        const timeDiff = currentTime - lastScrollTime;
+        const scrollDiff = lastScrollY - currentY; // Positive when scrolling up
+        
+        // Detect fast upward scroll near the top of page
+        if (currentY < 150 && scrollDiff > 0 && timeDiff > 0) {
+            const scrollSpeed = scrollDiff / timeDiff; // pixels per ms
+            
+            // If they're scrolling up quickly (like trying to reach address bar)
+            if (scrollSpeed > 0.8) { // Adjust threshold as needed
+                showExitModal();
+            }
+        }
+        
+        lastScrollY = currentY;
+        lastScrollTime = currentTime;
+    }
+    
+    // 3. IDLE DETECTION + SCROLL UP
+    let isIdle = false;
+    let idleTimer;
+    
+    function resetIdleTimer() {
+        isIdle = false;
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            isIdle = true;
+        }, 30000); // 30 seconds of inactivity
+    }
+    
+    function handleIdleScroll() {
+        if (hasShown || !isIdle) return;
+        
+        const currentY = window.scrollY;
+        if (currentY < 200 && lastScrollY - currentY > 50) {
+            showExitModal();
+        }
+    }
+    
+    // 4. TAB VISIBILITY (when they switch apps/tabs)
+    function handleVisibilityChange() {
+        if (hasShown) return;
+        
+        // If they come back to the tab after being away and are near top
+        if (!document.hidden && isIdle && window.scrollY < 300) {
+            setTimeout(() => {
+                if (!hasShown) showExitModal();
+            }, 1000); // Small delay to not be jarring
+        }
+    }
+    
+    // Initialize all triggers
+    setupBackButtonTrap();
+    
+    // Throttled scroll handler
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            handleScroll();
+            handleIdleScroll();
+        }, 100);
+    }, { passive: true });
+    
+    // Reset idle timer on user activity
+    ['touchstart', 'touchmove', 'scroll', 'keydown'].forEach(event => {
+        window.addEventListener(event, resetIdleTimer, { passive: true });
+    });
+    resetIdleTimer();
+    
+    // Tab visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Allow leaving after dismissing modal
+    dismissBtn.addEventListener('click', () => {
+        isLeavingAllowed = true;
+        setTimeout(() => {
+            isLeavingAllowed = false; // Reset after a short time
+        }, 5000);
+    });
+    
+})();
+
+// Live chat function (customize based on your chat provider)
+function startLiveChat() {
+    // Track the conversion
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'exit_intent_chat_click', {
+            event_category: 'conversion',
+            event_label: 'mobile_exit_to_chat'
+        });
+    }
+    
+    // Hide the modal
+    document.getElementById('exitModal').classList.remove('show');
+    document.body.style.overflow = '';
+    
+    // Initialize your chat widget here
+    // Examples for common chat providers:
+    
+    // Intercom
+    // if (window.Intercom) window.Intercom('show');
+    
+    // Zendesk Chat
+    // if (window.$zopim) window.$zopim.livechat.window.show();
+    
+    // Drift
+    // if (window.drift) window.drift.api.sidebar.open();
+    
+    // LiveChat
+    // if (window.LC_API) window.LC_API.open_chat_window();
+    
+    // Or redirect to a chat page
+    window.location.href = '/chat';
+    
+    // Or show a phone number prominently
+    // alert('Call now: 833-635-0131 or text DEBT to 12345');
+}

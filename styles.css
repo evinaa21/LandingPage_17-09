@@ -1328,3 +1328,119 @@ body {
         margin-top: 1.5rem;
     }
 }
+
+/* Add these styles to your CSS */
+.exit-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.exit-modal.show {
+    display: flex;
+}
+
+.exit-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+}
+
+.exit-modal__panel {
+    position: relative;
+    max-width: 380px;
+    width: 100%;
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    animation: modalSlideIn 0.3s ease-out forwards;
+}
+
+@keyframes modalSlideIn {
+    to { transform: scale(1); }
+}
+
+.exit-modal__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+.exit-modal h2 {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.exit-modal p {
+    color: #4b5563;
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+}
+
+.exit-modal__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.exit-modal .btn {
+    padding: 0.875rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.exit-modal .btn--primary {
+    background: linear-gradient(135deg, #0004ff 0%, #020a80 100%);
+    color: white;
+    font-size: 1rem;
+}
+
+.exit-modal .btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 4, 255, 0.4);
+}
+
+.exit-modal .btn--secondary {
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.exit-modal__trust {
+    font-size: 0.8rem;
+    color: #059669;
+    font-weight: 500;
+}
+
+@media (max-width: 480px) {
+    .exit-modal__panel {
+        margin: 1rem;
+        padding: 1.25rem;
+    }
+    
+    .exit-modal h2 {
+        font-size: 1.2rem;
+    }
+}
