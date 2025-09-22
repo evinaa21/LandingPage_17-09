@@ -381,87 +381,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - simple back navigation
+    // Leave anyway button - simple standard behavior
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
-
-        const ua = navigator.userAgent || '';
-
-        // 1) If we have an external link destination, go there
+        
+        // 1) If user clicked an external link, go there
         if (intendedDestination && intendedDestination.startsWith('http') && !intendedDestination.includes(window.location.hostname)) {
             window.location.href = intendedDestination;
             return;
         }
-
-        // 2) For chat/social media environments - single back step
-        const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
         
-        if (isInAppBrowser) {
-            // Just go back one step (back to chat)
-            if (history.length > 1) {
-                history.back();
-                return;
-            }
-            
-            // Fallback: Try app-specific schemes to return to chat
-            if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { 
-                try { window.location.href = 'fb-messenger://'; return; } catch (_) {}
-            }
-            if (/Instagram/i.test(ua)) { 
-                try { window.location.href = 'instagram://'; return; } catch (_) {}
-            }
-            if (/WhatsApp/i.test(ua)) { 
-                try { window.location.href = 'whatsapp://app'; return; } catch (_) {}
-            }
-            if (/TTWebView|TikTok/i.test(ua)) { 
-                try { window.location.href = 'snssdk1128://'; return; } catch (_) {}
-            }
-        }
-
-        // 3) For regular browsers - single back step (like normal back button)
+        // 2) Standard back navigation - like most websites
         if (history.length > 1) {
-            history.back(); // Just one step back, like normal back button
-            return;
-        }
-
-        // 4) Use referrer if available and no history
-        if (document.referrer && document.referrer !== window.location.href) {
+            history.back();
+        } else {
+            // If no history, try to close the tab/window
             try {
-                window.location.assign(document.referrer);
-                return;
-            } catch (e) {
-                console.log('Referrer navigation failed:', e);
-            }
-        }
-
-        // 5) Final fallbacks only if no history exists
-        attemptAlternativeExit();
-
-        function attemptAlternativeExit() {
-            // Try messenger extensions
-            try {
-                if (typeof MessengerExtensions !== 'undefined') {
-                    MessengerExtensions.requestCloseBrowser(function(){}, function(){});
-                    return;
-                }
-            } catch (_) {}
-
-            // Try to close the window
-            try {
-                if (window.opener) { 
-                    window.close(); 
-                    return; 
-                }
-            } catch (_) {}
-
-            try {
-                window.open('', '_self'); 
                 window.close();
-            } catch (_) {}
-
-            // Last resort - just let user continue
-            console.log('Cannot navigate away - user must manually navigate');
+            } catch (e) {
+                // If can't close, just stay on page (browser security)
+                console.log('Cannot navigate away - no history available');
+            }
         }
     });
     
