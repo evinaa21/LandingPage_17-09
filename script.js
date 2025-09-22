@@ -389,11 +389,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Go to the intended destination
             window.location.href = intendedDestination;
         } else {
-            // Check if we're in a webview/app context
-            const isInApp = window.navigator.standalone || 
-                           window.matchMedia('(display-mode: standalone)').matches ||
-                           /MessengerWebView|FBAN|FBAV|Instagram|LinkedInApp|TwitterAndroid|WhatsApp/.test(navigator.userAgent) ||
-                           window.top !== window.self;
+            // Enhanced detection for all types of apps and webviews
+            const isInApp = detectWebview();
             
             if (isInApp) {
                 // Try multiple methods to close the webview
@@ -418,230 +415,214 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        function fallbackClose() {
-            // Try various methods to close the webview
+        function detectWebview() {
+            // Check if running in standalone mode (PWA)
+            if (window.navigator.standalone) return true;
+            
+            // Check for PWA display mode
+            if (window.matchMedia('(display-mode: standalone)').matches) return true;
+            
+            // Check if inside iframe
+            if (window.top !== window.self) return true;
+            
+            // Check user agent for known apps
+            const userAgent = navigator.userAgent.toLowerCase();
+            const appPatterns = [
+                // Social Media Apps
+                'fban', 'fbav', 'fbios', 'fb_iab', 'fbsv', // Facebook
+                'messengerwebview', 'messenger', // Messenger
+                'instagram', 'ig_web', // Instagram
+                'twitter', 'twitterandroid', 'twitterios', // Twitter/X
+                'snapchat', // Snapchat
+                'tiktok', 'musical_ly', // TikTok
+                'pinterestbrowser', 'pinterest', // Pinterest
+                'linkedinapp', 'linkedin', // LinkedIn
+                'whatsapp', 'wabrowser', // WhatsApp
+                'telegram', // Telegram
+                'discordapp', 'discord', // Discord
+                'reddit', 'redditapp', // Reddit
+                'tumblr', // Tumblr
+                'viber', // Viber
+                'line', // Line
+                'wechat', 'micromessenger', // WeChat
+                'kakaotalk', // KakaoTalk
+                
+                // Shopping Apps
+                'amazonwebview', 'amazon', // Amazon
+                'ebayapp', 'ebay', // eBay
+                'shopifywebview', 'shopify', // Shopify
+                'etsy', // Etsy
+                'wish', // Wish
+                'aliexpress', // AliExpress
+                
+                // News & Media Apps
+                'flipboard', // Flipboard
+                'googleapp', 'gsa', // Google App
+                'chromewebview', // Chrome WebView
+                'applewebkit', // General WebKit (iOS apps)
+                'android', // General Android apps
+                'mobile', // Generic mobile browser
+                
+                // Email Apps
+                'outlook', 'outlookapp', // Outlook
+                'gmail', 'gmailapp', // Gmail
+                'yahoo', 'yahoomail', // Yahoo Mail
+                
+                // Other Popular Apps
+                'uber', 'lyft', // Ride sharing
+                'spotify', 'apple music', // Music
+                'netflix', 'hulu', 'disney', // Streaming
+                'zoom', 'teams', 'skype', // Video calls
+                'slack', // Workplace
+                'airbnb', 'booking', // Travel
+                'paypal', 'venmo', 'cashapp', // Finance
+                'tinder', 'bumble', 'hinge', // Dating
+                'pokemon go', 'candy crush', // Games
+            ];
+            
+            // Check if any app pattern matches
+            const isApp = appPatterns.some(pattern => userAgent.includes(pattern));
+            if isApp) return true;
+            
+            // Check for generic webview indicators
+            const webviewIndicators = [
+                'webview',
+                'inapp',
+                'embedded',
+                'cordova',
+                'phonegap',
+                'ionic',
+                'crosswalk',
+                'xamarin',
+                'react-native',
+                'flutter',
+                'capacitor',
+                'electronforge'
+            ];
+            
+            const hasWebviewIndicator = webviewIndicators.some(indicator => 
+                userAgent.includes(indicator)
+            );
+            if (hasWebviewIndicator) return true;
+            
+            // Check for missing features that indicate webview
             try {
-                // Method 1: Close window if it was opened by script
+                // Check if window.open is limited (common in apps)
+                if (typeof window.open !== 'function') return true;
+                
+                // Check if certain APIs are missing
+                if (!window.external || !window.chrome) {
+                    // Additional checks for mobile webviews
+                    if (/mobile|android|ios|iphone|ipad/i.test(userAgent)) {
+                        return true;
+                    }
+                }
+                
+                // Check screen dimensions (some apps have specific sizes)
+                const isNonStandardSize = window.screen.width < 300 || 
+                                        window.screen.height < 300 ||
+                                        (window.innerHeight > window.screen.height);
+                
+                if (isNonStandardSize && /mobile/i.test(userAgent)) return true;
+                
+            } catch (e) {
+                // If we can't check these features, might be in restricted environment
+                return true;
+            }
+            
+            return false;
+        }
+        
+        function fallbackClose() {
+            // Try various methods to close the webview/app
+            try {
+                // Method 1: Try native app close methods
+                if (window.webkit && window.webkit.messageHandlers) {
+                    // iOS WebView
+                    try {
+                        window.webkit.messageHandlers.close.postMessage({});
+                        return;
+                    } catch (e) {
+                        console.log('iOS WebView close failed');
+                    }
+                }
+                
+                if (window.Android && window.Android.close) {
+                    // Android WebView with exposed close method
+                    try {
+                        window.Android.close();
+                        return;
+                    } catch (e) {
+                        console.log('Android WebView close failed');
+                    }
+                }
+                
+                // Method 2: Try to close window if it was opened by script
                 if (window.opener) {
                     window.close();
                     return;
                 }
                 
-                // Method 2: Try to go to a blank page that might trigger app close
+                // Method 3: Try postMessage to parent (for iframes)
+                if (window.parent !== window) {
+                    try {
+                        window.parent.postMessage({ action: 'close' }, '*');
+                        setTimeout(() => window.history.back(), 500);
+                        return;
+                    } catch (e) {
+                        console.log('PostMessage close failed');
+                    }
+                }
+                
+                // Method 4: Navigate to app-specific close URLs
+                const userAgent = navigator.userAgent.toLowerCase();
+                
+                if (userAgent.includes('fban') || userAgent.includes('fbav')) {
+                    // Facebook app close
+                    window.location.href = 'fb://close';
+                    setTimeout(() => window.history.back(), 100);
+                    return;
+                }
+                
+                if (userAgent.includes('instagram')) {
+                    // Instagram app close
+                    window.location.href = 'instagram://close';
+                    setTimeout(() => window.history.back(), 100);
+                    return;
+                }
+                
+                if (userAgent.includes('twitter')) {
+                    // Twitter app close
+                    window.location.href = 'twitter://close';
+                    setTimeout(() => window.history.back(), 100);
+                    return;
+                }
+                
+                // Method 5: Try to go to a blank page that might trigger app close
                 window.location.href = 'about:blank';
                 
-                // Method 3: Fallback to history back after a short delay
+                // Method 6: Fallback to history back after a short delay
                 setTimeout(() => {
-                    window.history.back();
+                    try {
+                        window.history.back();
+                    } catch (e) {
+                        // If history.back() fails, try going to the app's main page
+                        if (window.location.href.includes('facebook.com')) {
+                            window.location.href = 'https://www.facebook.com';
+                        } else if (window.location.href.includes('instagram.com')) {
+                            window.location.href = 'https://www.instagram.com';
+                        } else {
+                            // Last resort - reload the page
+                            window.location.reload();
+                        }
+                    }
                 }, 100);
                 
             } catch (e) {
                 // Final fallback
+                console.log('All close methods failed, using history.back()');
                 window.history.back();
             }
         }
     });
-    
-    // Add close button functionality
-    closeBtn.addEventListener('click', () => {
-        hideExitModal();
-    });
-    
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal || e.target.classList.contains('exit-modal__overlay')) {
-            hideExitModal();
-        }
-    });
-    
-    // Escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('show')) {
-            hideExitModal();
-        }
-    });
-    
-    // DESKTOP TRIGGERS
-    if (!isMobile) {
-        console.log('Setting up desktop triggers');
-        
-        let mouseLeaveTimeout;
-        document.documentElement.addEventListener('mouseleave', (e) => {
-            if (hasShown) return;
-            
-            if (e.clientY <= 10) {
-                clearTimeout(mouseLeaveTimeout);
-                mouseLeaveTimeout = setTimeout(() => {
-                    console.log('Mouse left through top - showing modal');
-                    captureIntendedDestination('browser_close_or_navigate');
-                    showExitModal();
-                }, 200);
-            }
-        });
-        
-        document.documentElement.addEventListener('mouseenter', () => {
-            clearTimeout(mouseLeaveTimeout);
-        });
-        
-        let backTrapActive = false;
-        function setupBackTrap() {
-            if (backTrapActive) return;
-            backTrapActive = true;
-            
-            setTimeout(() => {
-                const currentState = history.state;
-                history.pushState({ exitGuard: true, original: currentState }, '');
-                
-                window.addEventListener('popstate', function backHandler(e) {
-                    if (!isLeavingAllowed && !hasShown && e.state && e.state.exitGuard) {
-                        console.log('Back button - showing modal');
-                        captureIntendedDestination('browser_back');
-                        showExitModal();
-                        history.pushState({ exitGuard: true, original: currentState }, '');
-                    }
-                });
-            }, 1000);
-        }
-        setupBackTrap();
-        
-        // Timer trigger
-        setTimeout(() => {
-            if (!hasShown) {
-                console.log('20 second timer - showing modal');
-                showExitModal();
-            }
-        }, 20000);
-        
-        // Idle detection
-        let idleTimer;
-        let isIdle = false;
-        
-        function resetIdle() {
-            clearTimeout(idleTimer);
-            
-            if (isIdle && !hasShown) {
-                console.log('Activity after idle - showing modal');
-                showExitModal();
-                return;
-            }
-            
-            isIdle = false;
-            idleTimer = setTimeout(() => {
-                isIdle = true;
-                console.log('User idle');
-            }, 15000);
-        }
-        
-        ['mousemove', 'keydown', 'scroll'].forEach(event => {
-            document.addEventListener(event, resetIdle, { passive: true });
-        });
-        resetIdle();
-        
-        // Tab visibility
-        let hasLeftTab = false;
-        document.addEventListener('visibilitychange', () => {
-            if (hasShown) return;
-            
-            if (document.hidden) {
-                hasLeftTab = true;
-                console.log('Tab hidden');
-            } else if (hasLeftTab) {
-                console.log('Tab visible - showing modal');
-                setTimeout(() => {
-                    if (!hasShown) showExitModal();
-                }, 1000);
-            }
-        });
-    }
-    
-    // MOBILE TRIGGERS
-    else {
-        console.log('Setting up mobile triggers');
-        
-        let mobileBackActive = false;
-        let exitIntentState = null;
-        
-        function setupMobileBack() {
-            if (mobileBackActive) return;
-            mobileBackActive = true;
-            
-            exitIntentState = 'exit_intent_' + Date.now();
-            
-            setTimeout(() => {
-                history.pushState({ exitGuard: true, id: exitIntentState }, '');
-                console.log('Mobile back trap set with ID:', exitIntentState);
-                
-                window.addEventListener('popstate', function mobileBackHandler(e) {
-                    console.log('Popstate event:', e.state);
-                    
-                    if (!isLeavingAllowed && !hasShown) {
-                        if (!e.state || (e.state && e.state.id === exitIntentState)) {
-                            console.log('Mobile back detected - showing modal');
-                            captureIntendedDestination('mobile_back');
-                            showExitModal();
-                            history.pushState({ exitGuard: true, id: exitIntentState }, '');
-                            return;
-                        }
-                    }
-                    
-                    if (isLeavingAllowed) {
-                        console.log('User allowed to leave');
-                        return;
-                    }
-                });
-            }, 3000);
-        }
-        setupMobileBack();
-        
-        // Touch/swipe detection
-        let touchStartY = 0;
-        let scrollUpCount = 0;
-        
-        window.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-        }, { passive: true });
-        
-        window.addEventListener('touchmove', (e) => {
-            if (hasShown) return;
-            
-            const touchY = e.touches[0].clientY;
-            const scrollY = window.scrollY;
-            
-            if (scrollY < 100 && touchY > touchStartY + 40) {
-                scrollUpCount++;
-                console.log('Upward swipe:', scrollUpCount);
-                if (scrollUpCount > 2) {
-                    console.log('Multiple swipes - showing modal');
-                    showExitModal();
-                }
-            } else {
-                scrollUpCount = 0;
-            }
-        }, { passive: true });
-        
-        // Timer
-        setTimeout(() => {
-            if (!hasShown) {
-                console.log('Mobile 25s timer - showing modal');
-                showExitModal();
-            }
-        }, 25000);
-        
-        // App visibility
-        let wasHidden = false;
-        document.addEventListener('visibilitychange', () => {
-            if (hasShown) return;
-            
-            if (document.hidden) {
-                wasHidden = true;
-                console.log('App hidden');
-            } else if (wasHidden) {
-                console.log('App visible - showing modal');
-                setTimeout(() => {
-                    if (!hasShown) showExitModal();
-                }, 2000);
-            }
-        });
-    }
-    
-    console.log('Exit intent system initialized');
 })();
