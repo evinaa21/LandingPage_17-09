@@ -381,10 +381,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - properly clear guards and navigate
+    // Leave anyway button - simple and reliable exit
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
+        
+        const ua = navigator.userAgent || '';
+        const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
         
         // 1) If user clicked an external link, go there
         if (intendedDestination && intendedDestination.startsWith('http') && !intendedDestination.includes(window.location.hostname)) {
@@ -392,13 +395,44 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 2) Clear the guard states and go back properly
-        if (guardPushCount > 0) {
-            // Go back past all the guard states we created
-            const stepsBack = guardPushCount + 1;
-            history.go(-stepsBack);
-        } else if (history.length > 1) {
-            // Normal back navigation
+        // 2) For social media internal browsers - try to close/exit completely
+        if (isInAppBrowser) {
+            // Try messenger extensions first
+            try {
+                if (typeof MessengerExtensions !== 'undefined') {
+                    MessengerExtensions.requestCloseBrowser(function(){}, function(){});
+                    return;
+                }
+            } catch (_) {}
+
+            // Try app-specific schemes to exit
+            if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { 
+                try { window.location.href = 'fb-messenger://'; return; } catch (_) {}
+            }
+            if (/Instagram/i.test(ua)) { 
+                try { window.location.href = 'instagram://'; return; } catch (_) {}
+            }
+            if (/WhatsApp/i.test(ua)) { 
+                try { window.location.href = 'whatsapp://app'; return; } catch (_) {}
+            }
+            if (/TTWebView|TikTok/i.test(ua)) { 
+                try { window.location.href = 'snssdk1128://'; return; } catch (_) {}
+            }
+
+            // Fallback: try to close window
+            try {
+                window.close();
+            } catch (_) {}
+            
+            // If all fails, go back one step
+            if (history.length > 1) {
+                history.back();
+            }
+            return;
+        }
+        
+        // 3) For regular browsers - just go back one step
+        if (history.length > 1) {
             history.back();
         } else {
             // No history - try to close
