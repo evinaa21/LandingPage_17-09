@@ -380,75 +380,91 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - go to intended destination or back
+    // Leave anyway button - robust exit (previous page, referrer, in-app close)
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
-        
+
+        const startHref = window.location.href;
+        const ua = navigator.userAgent || '';
+
+        const isStandalone = !!window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+        const isInIframe = window.top !== window.self;
+        const isAndroidWV = /\bwv\b/.test(ua);
+        const isIOSWV = /(iPhone|iPad|iPod).*AppleWebKit(?!.*Safari)/i.test(ua);
+        const isFB = /FBAN|FBAV|FB_IAB|Messenger/i.test(ua);
+        const isIG = /Instagram/i.test(ua);
+        const isTT = /TTWebView|TikTok/i.test(ua);
+        const isOtherApp = /Line|WhatsApp|WeChat|Telegram|Snapchat|Pinterest|Reddit|Discord|Slack|Teams|Zoom/i.test(ua);
+        const isInApp = isStandalone || isInIframe || isAndroidWV || isIOSWV || isFB || isIG || isTT || isOtherApp;
+
+        // 1) If user clicked a link we intercepted, go there directly
         if (intendedDestination) {
-            // Go to the intended destination
             window.location.href = intendedDestination;
-        } else {
-            // Check if we're in any app/webview context
-            const isInApp = window.navigator.standalone || 
-                           window.matchMedia('(display-mode: standalone)').matches ||
-                           /MessengerWebView|FBAN|FBAV|Instagram|LinkedInApp|TwitterAndroid|WhatsApp|Line|WeChat|Telegram|Snapchat|TikTok|Pinterest|Reddit|Discord|Slack|Teams|Zoom/.test(navigator.userAgent) ||
-                           window.top !== window.self ||
-                           window.parent !== window;
-            
-            if (isInApp) {
-                // Try multiple methods to close any webview/app
-                try {
-                    // Method 1: Try Messenger Extensions first
-                    if (typeof MessengerExtensions !== 'undefined') {
-                        MessengerExtensions.requestCloseBrowser(() => {
-                            console.log('Closed via MessengerExtensions');
-                        }, () => fallbackClose());
-                    } else {
-                        fallbackClose();
-                    }
-                } catch (e) {
-                    fallbackClose();
-                }
-            } else {
-                // Regular browser - go back
-                window.history.back();
-            }
+            return;
         }
-        
-        function fallbackClose() {
-            // Universal methods to close webviews/apps
+
+        // 2) Try the referrer (most reliable "last page")
+        if (document.referrer && document.referrer !== startHref) {
+            window.location.assign(document.referrer);
+            return;
+        }
+
+        // 3) Handle our back-guard: if modal was shown via back, two guard states likely exist
+        if (history.length > 2 && hasShown) {
+            history.go(-2);
+        } else if (history.length > 1) {
+            history.back();
+        } else {
+            // No history to go back to
+            attemptCloseOrBlank();
+        }
+
+        // 4) If still here after a short delay, escalate
+        setTimeout(() => {
+            if (window.location.href === startHref) {
+                if (!document.referrer && history.length > 1) {
+                    history.back();
+                    setTimeout(() => {
+                        if (window.location.href === startHref) attemptCloseOrBlank();
+                    }, 250);
+                } else {
+                    attemptCloseOrBlank();
+                }
+            }
+        }, 250);
+
+        function attemptCloseOrBlank() {
+            // Try native close for Messenger if available
             try {
-                // Method 1: Close window if possible
-                if (window.opener || window.history.length <= 1) {
+                if (typeof MessengerExtensions !== 'undefined') {
+                    MessengerExtensions.requestCloseBrowser(function(){}, function(){});
+                    return;
+                }
+            } catch (_) {}
+
+            // Try deep links to bounce back to the host app
+            if (isFB) { window.location.href = 'fb-messenger://'; return; }
+            if (isIG) { window.location.href = 'instagram://'; return; }
+            if (/WhatsApp/i.test(ua)) { window.location.href = 'whatsapp://app'; return; }
+            if (isTT) { window.location.href = 'snssdk1128://'; return; }
+
+            // Try to close the window if it was opened by another window
+            try {
+                if (window.opener) {
                     window.close();
                     return;
                 }
-                
-                // Method 2: Try navigating to blank page (triggers close in many apps)
-                window.location.href = 'about:blank';
-                
-                // Method 3: Try going to app-specific close URLs
-                setTimeout(() => {
-                    if (navigator.userAgent.includes('Instagram')) {
-                        window.location.href = 'instagram://';
-                    } else if (navigator.userAgent.includes('FBAN') || navigator.userAgent.includes('FBAV')) {
-                        window.location.href = 'fb://';
-                    } else if (navigator.userAgent.includes('TwitterAndroid')) {
-                        window.location.href = 'twitter://';
-                    } else if (navigator.userAgent.includes('LinkedInApp')) {
-                        window.location.href = 'linkedin://';
-                    } else if (navigator.userAgent.includes('WhatsApp')) {
-                        window.location.href = 'whatsapp://';
-                    } else {
-                        // Final fallback - browser back
-                        window.history.back();
-                    }
-                }, 100);
-                
-            } catch (e) {
-                // Final fallback
-                window.history.back();
+                // iOS/Safari trick
+                window.open('', '_self');
+                window.close();
+            } catch (_) {}
+
+            // Final fallback: blank out
+            try {
+                window.location.replace('about:blank');
+            } catch (_) {
+                history.go(-1);
             }
         }
     });
