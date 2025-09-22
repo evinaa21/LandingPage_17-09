@@ -381,67 +381,56 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - simple and reliable exit
+    // Leave anyway button - standard behavior
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
-        
-        const ua = navigator.userAgent || '';
-        const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
-        
-        // 1) If user clicked an external link, go there
-        if (intendedDestination && intendedDestination.startsWith('http') && !intendedDestination.includes(window.location.hostname)) {
+
+        const isExternal = (url) => {
+            try {
+                const u = new URL(url, window.location.href);
+                return u.origin !== window.location.origin;
+            } catch { return false; }
+        };
+
+        // 1) If user intended to go to an external link, go there
+        if (intendedDestination && isExternal(intendedDestination)) {
             window.location.href = intendedDestination;
             return;
         }
-        
-        // 2) For social media internal browsers - try to close/exit completely
+
+        // 2) Prefer referrer (most consistent way to leave current page)
+        if (document.referrer && document.referrer !== window.location.href) {
+            try {
+                window.location.assign(document.referrer);
+                return;
+            } catch (_) {}
+        }
+
+        // 3) If we injected guard states, skip them and go back one real page
+        if (history.length > 1) {
+            const steps = guardPushCount > 0 ? -(guardPushCount + 1) : -1;
+            history.go(steps);
+            return;
+        }
+
+        // 4) In-app browsers (Messenger/Instagram/etc.) - try to close
+        const ua = navigator.userAgent || '';
+        const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
+
         if (isInAppBrowser) {
-            // Try messenger extensions first
             try {
                 if (typeof MessengerExtensions !== 'undefined') {
                     MessengerExtensions.requestCloseBrowser(function(){}, function(){});
                     return;
                 }
             } catch (_) {}
-
-            // Try app-specific schemes to exit
-            if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { 
-                try { window.location.href = 'fb-messenger://'; return; } catch (_) {}
-            }
-            if (/Instagram/i.test(ua)) { 
-                try { window.location.href = 'instagram://'; return; } catch (_) {}
-            }
-            if (/WhatsApp/i.test(ua)) { 
-                try { window.location.href = 'whatsapp://app'; return; } catch (_) {}
-            }
-            if (/TTWebView|TikTok/i.test(ua)) { 
-                try { window.location.href = 'snssdk1128://'; return; } catch (_) {}
-            }
-
-            // Fallback: try to close window
-            try {
-                window.close();
-            } catch (_) {}
-            
-            // If all fails, go back one step
-            if (history.length > 1) {
-                history.back();
-            }
+            try { window.close(); } catch (_) {}
             return;
         }
-        
-        // 3) For regular browsers - just go back one step
-        if (history.length > 1) {
-            history.back();
-        } else {
-            // No history - try to close
-            try {
-                window.close();
-            } catch (e) {
-                console.log('Cannot navigate away - no history available');
-            }
-        }
+
+        // 5) Final fallback - go to site root
+        try { window.location.href = '/'; } catch (_) {}
     });
     
     // Add close button functionality
