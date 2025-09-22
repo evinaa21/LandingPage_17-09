@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - simple standard behavior
+    // Leave anyway button - properly clear guards and navigate
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
@@ -392,15 +392,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 2) Standard back navigation - like most websites
-        if (history.length > 1) {
+        // 2) Clear the guard states and go back properly
+        if (guardPushCount > 0) {
+            // Go back past all the guard states we created
+            const stepsBack = guardPushCount + 1;
+            history.go(-stepsBack);
+        } else if (history.length > 1) {
+            // Normal back navigation
             history.back();
         } else {
-            // If no history, try to close the tab/window
+            // No history - try to close
             try {
                 window.close();
             } catch (e) {
-                // If can't close, just stay on page (browser security)
                 console.log('Cannot navigate away - no history available');
             }
         }
