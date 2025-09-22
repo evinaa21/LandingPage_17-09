@@ -286,9 +286,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 
-// CORRECTED exit-intent system
+
 (function() {
-    // Check if modal exists first
+    
     const modal = document.getElementById('exitModal');
     if (!modal) {
         console.log('Exit modal not found');
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Session tracking
+    
     const SHOWN_KEY = 'curadebt_exit_shown_v1';
     let hasShown = sessionStorage.getItem(SHOWN_KEY) === '1';
     let isLeavingAllowed = false;
@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Device detection
+    
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
     console.log('Device detected as:', isMobile ? 'Mobile' : 'Desktop');
     
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
         
-        // Focus first button
+        
         const firstBtn = modal.querySelector('.btn');
         if (firstBtn) firstBtn.focus();
     }
@@ -340,34 +340,34 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     }
     
-    // Event listeners
+    
     closeBtn.addEventListener('click', hideExitModal);
     dismissBtn.addEventListener('click', hideExitModal);
     
-    // Click outside to close
+    
     modal.addEventListener('click', (e) => {
         if (e.target === modal || e.target.classList.contains('exit-modal__overlay')) {
             hideExitModal();
         }
     });
     
-    // Escape key
+    
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.classList.contains('show')) {
             hideExitModal();
         }
     });
     
-    // DESKTOP TRIGGERS
+    
     if (!isMobile) {
         console.log('Setting up desktop triggers');
         
-        // 1. FIXED Mouse leave detection
+        
         let mouseLeaveTimeout;
         document.documentElement.addEventListener('mouseleave', (e) => {
             if (hasShown) return;
             
-            // Only trigger if mouse leaves through top
+            
             if (e.clientY <= 10) {
                 clearTimeout(mouseLeaveTimeout);
                 mouseLeaveTimeout = setTimeout(() => {
@@ -377,18 +377,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Cancel if mouse re-enters quickly
+        
         document.documentElement.addEventListener('mouseenter', () => {
             clearTimeout(mouseLeaveTimeout);
         });
         
-        // 2. FIXED Back button (avoid conflict with main script)
+        
         let backTrapActive = false;
         function setupBackTrap() {
             if (backTrapActive) return;
             backTrapActive = true;
             
-            // Wait a bit to avoid conflicts with main script
+            
             setTimeout(() => {
                 const currentState = history.state;
                 history.pushState({ exitGuard: true, original: currentState }, '');
@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!isLeavingAllowed && !hasShown && e.state && e.state.exitGuard) {
                         console.log('Back button - showing modal');
                         showExitModal();
-                        // Restore the state
+                        
                         history.pushState({ exitGuard: true, original: currentState }, '');
                     }
                 });
@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         setupBackTrap();
         
-        // 3. Time trigger - 20 seconds
+        
         setTimeout(() => {
             if (!hasShown) {
                 console.log('20 second timer - showing modal');
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 20000);
         
-        // 4. SIMPLIFIED Idle detection
+        
         let idleTimer;
         let isIdle = false;
         
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         resetIdle();
         
-        // 5. Tab visibility
+        
         let hasLeftTab = false;
         document.addEventListener('visibilitychange', () => {
             if (hasShown) return;
@@ -455,11 +455,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // MOBILE TRIGGERS
+    
     else {
         console.log('Setting up mobile triggers');
         
-        // 1. IMPROVED Back button for mobile
+        
         let mobileBackActive = false;
         let exitIntentState = null;
         
@@ -467,42 +467,42 @@ document.addEventListener('DOMContentLoaded', function() {
             if (mobileBackActive) return;
             mobileBackActive = true;
             
-            // Create a unique identifier for our exit intent state
+            
             exitIntentState = 'exit_intent_' + Date.now();
             
-            // Wait for page to fully load before setting up back trap
+            
             setTimeout(() => {
-                // Push our exit intent state
+                
                 history.pushState({ exitGuard: true, id: exitIntentState }, '');
                 console.log('Mobile back trap set with ID:', exitIntentState);
                 
-                // Listen for back navigation
+                
                 window.addEventListener('popstate', function mobileBackHandler(e) {
                     console.log('Popstate event:', e.state);
                     
-                    // Check if this is our exit intent trigger
+                    
                     if (!isLeavingAllowed && !hasShown) {
-                        // If there's no state or it's our exit intent state, show modal
+                        
                         if (!e.state || (e.state && e.state.id === exitIntentState)) {
                             console.log('Mobile back detected - showing modal');
                             showExitModal();
-                            // Re-push our state to keep the trap active
+                            
                             history.pushState({ exitGuard: true, id: exitIntentState }, '');
                             return;
                         }
                     }
                     
-                    // If user dismissed modal and wants to leave, let them
+                    
                     if (isLeavingAllowed) {
                         console.log('User allowed to leave');
                         return;
                     }
                 });
-            }, 3000); // Longer delay to avoid conflicts with quiz logic
+            }, 3000); 
         }
         setupMobileBack();
         
-        // 2. Touch scroll detection
+        
         let touchStartY = 0;
         let scrollUpCount = 0;
         
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, { passive: true });
         
-        // 3. Time trigger - 25 seconds for mobile
+        
         setTimeout(() => {
             if (!hasShown) {
                 console.log('Mobile 25s timer - showing modal');
@@ -536,7 +536,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 25000);
         
-        // 4. App switching
+        
         let wasHidden = false;
         document.addEventListener('visibilitychange', () => {
             if (hasShown) return;
@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Allow leaving after dismissing
+    
     dismissBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         setTimeout(() => {
@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Exit intent system initialized');
 })();
 
-// WhatsApp chat function (unchanged)
+
 function startLiveChat() {
     if (typeof gtag !== 'undefined') {
         gtag('event', 'exit_intent_whatsapp_click', {
@@ -580,5 +580,5 @@ function startLiveChat() {
     const message = encodeURIComponent("Hi! I'm interested in learning about debt relief options. Can you help me check my eligibility?");
     const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
     
-    window.open(whatsappURL, '_blank');
-}
+        window.open(whatsappURL, '_blank');
+    }
