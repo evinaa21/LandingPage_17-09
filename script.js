@@ -459,24 +459,46 @@ document.addEventListener('DOMContentLoaded', function() {
     else {
         console.log('Setting up mobile triggers');
         
-        // 1. Back button for mobile
+        // 1. IMPROVED Back button for mobile
         let mobileBackActive = false;
+        let exitIntentState = null;
+        
         function setupMobileBack() {
             if (mobileBackActive) return;
             mobileBackActive = true;
             
+            // Create a unique identifier for our exit intent state
+            exitIntentState = 'exit_intent_' + Date.now();
+            
+            // Wait for page to fully load before setting up back trap
             setTimeout(() => {
-                const currentState = history.state;
-                history.pushState({ exitGuard: true, mobile: true }, '');
+                // Push our exit intent state
+                history.pushState({ exitGuard: true, id: exitIntentState }, '');
+                console.log('Mobile back trap set with ID:', exitIntentState);
                 
+                // Listen for back navigation
                 window.addEventListener('popstate', function mobileBackHandler(e) {
+                    console.log('Popstate event:', e.state);
+                    
+                    // Check if this is our exit intent trigger
                     if (!isLeavingAllowed && !hasShown) {
-                        console.log('Mobile back - showing modal');
-                        showExitModal();
-                        history.pushState({ exitGuard: true, mobile: true }, '');
+                        // If there's no state or it's our exit intent state, show modal
+                        if (!e.state || (e.state && e.state.id === exitIntentState)) {
+                            console.log('Mobile back detected - showing modal');
+                            showExitModal();
+                            // Re-push our state to keep the trap active
+                            history.pushState({ exitGuard: true, id: exitIntentState }, '');
+                            return;
+                        }
+                    }
+                    
+                    // If user dismissed modal and wants to leave, let them
+                    if (isLeavingAllowed) {
+                        console.log('User allowed to leave');
+                        return;
                     }
                 });
-            }, 2000); // Longer delay for mobile
+            }, 3000); // Longer delay to avoid conflicts with quiz logic
         }
         setupMobileBack();
         
