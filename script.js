@@ -381,62 +381,84 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - desktop unchanged, mobile fixed
+    // Leave anyway button - desktop unchanged, mobile closes in-app browsers
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
 
         const ua = navigator.userAgent || '';
         const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
+        const isAndroid = /Android/i.test(ua);
 
         const isExternal = (url) => {
-            try {
-                const u = new URL(url, window.location.href);
-                return u.origin !== window.location.origin;
-            } catch { return false; }
+            try { const u = new URL(url, window.location.href); return u.origin !== window.location.origin; }
+            catch { return false; }
         };
 
-        // External link intent always wins
+        // If user was heading to an external link, just go there
         if (intendedDestination && isExternal(intendedDestination)) {
             window.location.href = intendedDestination;
             return;
         }
 
-        // MOBILE BRANCH: do not use guardPushCount, avoid double-back
+        // MOBILE: in-app browsers should close; regular mobile should go back once
         if (isMobile) {
-            // In-app browsers: attempt to close the webview
             if (isInAppBrowser) {
+                // 1) Messenger official API (if available)
                 try {
-                    if (typeof MessengerExtensions !== 'undefined') {
+                    if (typeof MessengerExtensions !== 'undefined' && MessengerExtensions.requestCloseBrowser) {
                         MessengerExtensions.requestCloseBrowser(function(){}, function(){});
                         return;
                     }
                 } catch (_) {}
 
-                // App scheme fallbacks to bounce to the native app (closes webview)
+                // 2) Deep-link into host app to close the webview
+                let schemeTried = false;
                 try {
-                    if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { window.location.href = 'fb-messenger://'; return; }
-                    if (/Instagram/i.test(ua)) { window.location.href = 'instagram://'; return; }
-                    if (/WhatsApp/i.test(ua)) { window.location.href = 'whatsapp://app'; return; }
-                    if (/TTWebView|TikTok/i.test(ua)) { window.location.href = 'snssdk1128://'; return; }
+                    if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) {
+                        window.location.href = 'fb-messenger://';
+                        schemeTried = true;
+                    } else if (/Instagram/i.test(ua)) {
+                        window.location.href = 'instagram://';
+                        schemeTried = true;
+                    } else if (/WhatsApp/i.test(ua)) {
+                        window.location.href = 'whatsapp://app';
+                        schemeTried = true;
+                    } else if (/TTWebView|TikTok/i.test(ua)) {
+                        window.location.href = 'snssdk1128://';
+                        schemeTried = true;
+                    }
                 } catch (_) {}
 
-                // Try to close the window/tab
+                // 3) Android intent fallback for Messenger/Instagram (often closes IAB)
+                if (!document.hidden && isAndroid && !schemeTried) {
+                    try {
+                        if (/Instagram/i.test(ua)) {
+                            window.location.href = 'intent://open/#Intent;scheme=instagram;package=com.instagram.android;end';
+                            schemeTried = true;
+                        } else if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) {
+                            window.location.href = 'intent://open/#Intent;scheme=fb-messenger;package=com.facebook.orca;end';
+                            schemeTried = true;
+                        }
+                    } catch (_) {}
+                }
+
+                // 4) Try to close window (may be blocked)
                 try { window.close(); } catch (_) {}
                 try { window.open('', '_self'); window.close(); } catch (_) {}
 
-                // Fallback: single back step
-                if (history.length > 0) { history.back(); }
+                // 5) If still visible after a short delay, go back one step
+                setTimeout(() => {
+                    if (!document.hidden && history.length > 0) history.back();
+                }, 600);
                 return;
             }
 
-            // Regular mobile browsers: single back step only
+            // Regular mobile browsers: exactly one back step
             if (history.length > 0) {
-                history.back(); // exactly one step
+                history.back();
                 return;
             }
-
-            // No history: try referrer, then close
             if (document.referrer && document.referrer !== window.location.href) {
                 try { window.location.assign(document.referrer); return; } catch (_) {}
             }
@@ -444,26 +466,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // DESKTOP BRANCH (unchanged behavior)
-        // 1) Prefer referrer
+        // DESKTOP: unchanged
         if (document.referrer && document.referrer !== window.location.href) {
-            try {
-                window.location.assign(document.referrer);
-                return;
-            } catch (_) {}
+            try { window.location.assign(document.referrer); return; } catch (_) {}
         }
-
-        // 2) Skip any guard states (desktop keeps original logic)
         if (history.length > 1) {
             const steps = guardPushCount > 0 ? -(guardPushCount + 1) : -1;
             history.go(steps);
             return;
         }
-
-        // 3) Desktop in-app (rare) - attempt close
         if (isInAppBrowser) {
             try {
-                if (typeof MessengerExtensions !== 'undefined') {
+                if (typeof MessengerExtensions !== 'undefined' && MessengerExtensions.requestCloseBrowser) {
                     MessengerExtensions.requestCloseBrowser(function(){}, function(){});
                     return;
                 }
@@ -471,8 +485,6 @@ document.addEventListener('DOMContentLoaded', function() {
             try { window.close(); } catch (_) {}
             return;
         }
-
-        // 4) Final desktop fallback
         try { window.location.href = '/'; } catch (_) {}
     });
     
