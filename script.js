@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - robust exit (back/referrer/app webviews)
+    // Leave anyway button - simple back navigation
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
@@ -394,12 +394,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 2) For chat/social media environments - go back to chat
-        // Check if we're in a social media webview
+        // 2) For chat/social media environments - single back step
         const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
         
         if (isInAppBrowser) {
-            // Try to go back in history first (back to chat)
+            // Just go back one step (back to chat)
             if (history.length > 1) {
                 history.back();
                 return;
@@ -420,21 +419,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // 3) For regular browsers - try going back in history
+        // 3) For regular browsers - single back step (like normal back button)
         if (history.length > 1) {
-            const steps = Math.min(history.length - 1, Math.max(1, guardPushCount + 1));
-            history.go(-steps);
-            
-            // If we're still on the same page after attempting to go back, try other methods
-            setTimeout(() => {
-                if (window.location.href === window.location.href) {
-                    attemptAlternativeExit();
-                }
-            }, 300);
+            history.back(); // Just one step back, like normal back button
             return;
         }
 
-        // 4) Use referrer if available
+        // 4) Use referrer if available and no history
         if (document.referrer && document.referrer !== window.location.href) {
             try {
                 window.location.assign(document.referrer);
@@ -444,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // 5) Final fallbacks
+        // 5) Final fallbacks only if no history exists
         attemptAlternativeExit();
 
         function attemptAlternativeExit() {
@@ -469,9 +460,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.close();
             } catch (_) {}
 
-            // Last resort - just hide the modal and let user navigate manually
+            // Last resort - just let user continue
             console.log('Cannot navigate away - user must manually navigate');
-            // The modal is already hidden, so user can continue using the page
         }
     });
     
