@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     }
     
-    // Messenger Chat button (Primary/Highlighted)
+  
     messengerBtn.addEventListener('click', () => {
         if (typeof gtag !== 'undefined') {
             gtag('event', 'exit_intent_messenger_click', {
@@ -349,9 +349,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         hideExitModal();
         
-        // Open Facebook Messenger for CuraDebt page
+       
         const messengerURL = 'https://m.me/CuraDebt';
         window.open(messengerURL, '_blank');
+    });
+    
+    // Dismiss button
+    dismissBtn.addEventListener('click', () => {
+        hideExitModal();
+        isLeavingAllowed = true;
+        setTimeout(() => {
+            isLeavingAllowed = false;
+        }, 5000);
     });
     
     // Leave anyway button
@@ -359,6 +368,11 @@ document.addEventListener('DOMContentLoaded', function() {
         isLeavingAllowed = true;
         hideExitModal();
         window.history.back();
+    });
+    
+    // Add close button functionality
+    closeBtn.addEventListener('click', () => {
+        hideExitModal();
     });
     
     modal.addEventListener('click', (e) => {
@@ -546,13 +560,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    dismissBtn.addEventListener('click', () => {
-        isLeavingAllowed = true;
-        setTimeout(() => {
-            isLeavingAllowed = false;
-        }, 5000);
-    });
     
     console.log('Exit intent system initialized');
 })();
