@@ -381,10 +381,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - standard behavior
+    // Leave anyway button - desktop unchanged, mobile fixed
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
+
+        const ua = navigator.userAgent || '';
+        const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
 
         const isExternal = (url) => {
             try {
@@ -393,13 +396,56 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch { return false; }
         };
 
-        // 1) If user intended to go to an external link, go there
+        // External link intent always wins
         if (intendedDestination && isExternal(intendedDestination)) {
             window.location.href = intendedDestination;
             return;
         }
 
-        // 2) Prefer referrer (most consistent way to leave current page)
+        // MOBILE BRANCH: do not use guardPushCount, avoid double-back
+        if (isMobile) {
+            // In-app browsers: attempt to close the webview
+            if (isInAppBrowser) {
+                try {
+                    if (typeof MessengerExtensions !== 'undefined') {
+                        MessengerExtensions.requestCloseBrowser(function(){}, function(){});
+                        return;
+                    }
+                } catch (_) {}
+
+                // App scheme fallbacks to bounce to the native app (closes webview)
+                try {
+                    if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { window.location.href = 'fb-messenger://'; return; }
+                    if (/Instagram/i.test(ua)) { window.location.href = 'instagram://'; return; }
+                    if (/WhatsApp/i.test(ua)) { window.location.href = 'whatsapp://app'; return; }
+                    if (/TTWebView|TikTok/i.test(ua)) { window.location.href = 'snssdk1128://'; return; }
+                } catch (_) {}
+
+                // Try to close the window/tab
+                try { window.close(); } catch (_) {}
+                try { window.open('', '_self'); window.close(); } catch (_) {}
+
+                // Fallback: single back step
+                if (history.length > 0) { history.back(); }
+                return;
+            }
+
+            // Regular mobile browsers: single back step only
+            if (history.length > 0) {
+                history.back(); // exactly one step
+                return;
+            }
+
+            // No history: try referrer, then close
+            if (document.referrer && document.referrer !== window.location.href) {
+                try { window.location.assign(document.referrer); return; } catch (_) {}
+            }
+            try { window.close(); } catch (_) {}
+            return;
+        }
+
+        // DESKTOP BRANCH (unchanged behavior)
+        // 1) Prefer referrer
         if (document.referrer && document.referrer !== window.location.href) {
             try {
                 window.location.assign(document.referrer);
@@ -407,17 +453,14 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (_) {}
         }
 
-        // 3) If we injected guard states, skip them and go back one real page
+        // 2) Skip any guard states (desktop keeps original logic)
         if (history.length > 1) {
             const steps = guardPushCount > 0 ? -(guardPushCount + 1) : -1;
             history.go(steps);
             return;
         }
 
-        // 4) In-app browsers (Messenger/Instagram/etc.) - try to close
-        const ua = navigator.userAgent || '';
-        const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
-
+        // 3) Desktop in-app (rare) - attempt close
         if (isInAppBrowser) {
             try {
                 if (typeof MessengerExtensions !== 'undefined') {
@@ -429,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 5) Final fallback - go to site root
+        // 4) Final desktop fallback
         try { window.location.href = '/'; } catch (_) {}
     });
     
@@ -560,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             setTimeout(() => {
                 history.pushState({ exitGuard: true, id: exitIntentState }, '');
-                guardPushCount++; // NEW
+                guardPushCount++; // keep counting, but we won't add another on show
                 window.addEventListener('popstate', function mobileBackHandler(e) {
                     console.log('Popstate event:', e.state);
 
@@ -569,8 +612,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log('Mobile back detected - showing modal');
                             captureIntendedDestination('mobile_back');
                             showExitModal();
-                            history.pushState({ exitGuard: true, id: exitIntentState }, '');
-                            guardPushCount++; // NEW
+
+                            // IMPORTANT: Do NOT push another guard state here on mobile.
+                            // This prevents the double-back issue after clicking "Leave anyway".
                             return;
                         }
                     }
