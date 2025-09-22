@@ -346,120 +346,103 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // 1. BACK BUTTON EXIT INTENT
+    // 1. BACK BUTTON EXIT INTENT (Most reliable on mobile)
     function setupBackButtonTrap() {
-        // Push a dummy state so back button triggers our handler first
         const dummyState = { exitGuard: true };
         history.pushState(dummyState, '');
         
         window.addEventListener('popstate', function(e) {
             if (!isLeavingAllowed && !hasShown) {
-                // Show modal instead of leaving
                 showExitModal();
-                // Push the state back so they can leave after closing modal
                 history.pushState(dummyState, '');
             }
         });
     }
     
-    // 2. FAST UPWARD SCROLL (pre-exit behavior)
-    let lastScrollY = window.scrollY;
-    let lastScrollTime = Date.now();
+    // 2. IMPROVED MOBILE SCROLL DETECTION
+    let touchStartY = 0;
+    let scrollDirection = 'down';
+    let rapidScrollCount = 0;
     
-    function handleScroll() {
-        if (hasShown) return;
-        
-        const currentY = window.scrollY;
-        const currentTime = Date.now();
-        const timeDiff = currentTime - lastScrollTime;
-        const scrollDiff = lastScrollY - currentY; // Positive when scrolling up
-        
-        // Detect fast upward scroll near the top of page
-        if (currentY < 150 && scrollDiff > 0 && timeDiff > 0) {
-            const scrollSpeed = scrollDiff / timeDiff; // pixels per ms
-            
-            // If they're scrolling up quickly (like trying to reach address bar)
-            if (scrollSpeed > 0.8) { // Adjust threshold as needed
-                showExitModal();
-            }
-        }
-        
-        lastScrollY = currentY;
-        lastScrollTime = currentTime;
-    }
-    
-    // 3. IDLE DETECTION + SCROLL UP
-    let isIdle = false;
-    let idleTimer;
-    
-    function resetIdleTimer() {
-        isIdle = false;
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-            isIdle = true;
-        }, 30000); // 30 seconds of inactivity
-    }
-    
-    function handleIdleScroll() {
-        if (hasShown || !isIdle) return;
-        
-        const currentY = window.scrollY;
-        if (currentY < 200 && lastScrollY - currentY > 50) {
-            showExitModal();
-        }
-    }
-    
-    // 4. TAB VISIBILITY (when they switch apps/tabs)
-    function handleVisibilityChange() {
-        if (hasShown) return;
-        
-        // If they come back to the tab after being away and are near top
-        if (!document.hidden && isIdle && window.scrollY < 300) {
-            setTimeout(() => {
-                if (!hasShown) showExitModal();
-            }, 1000); // Small delay to not be jarring
-        }
-    }
-    
-    // Initialize all triggers
-    setupBackButtonTrap();
-    
-    // Throttled scroll handler
-    let scrollTimeout;
-    window.addEventListener('scroll', () => {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-            handleScroll();
-            handleIdleScroll();
-        }, 100);
+    // Touch-based scroll detection (more accurate for mobile)
+    window.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
     }, { passive: true });
     
-    // Reset idle timer on user activity
-    ['touchstart', 'touchmove', 'scroll', 'keydown'].forEach(event => {
-        window.addEventListener(event, resetIdleTimer, { passive: true });
-    });
-    resetIdleTimer();
+    window.addEventListener('touchmove', (e) => {
+        if (hasShown) return;
+        
+        const touchY = e.touches[0].clientY;
+        const scrollY = window.scrollY;
+        
+        // Detect upward swipe motion near top of page
+        if (scrollY < 200 && touchY > touchStartY + 30) {
+            rapidScrollCount++;
+            if (rapidScrollCount > 2) { // Multiple rapid upward swipes
+                showExitModal();
+            }
+        } else {
+            rapidScrollCount = 0;
+        }
+    }, { passive: true });
     
-    // Tab visibility changes
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // 3. PAGE VISIBILITY (when user switches apps/tabs)
+    let wasHidden = false;
+    document.addEventListener('visibilitychange', () => {
+        if (hasShown) return;
+        
+        if (document.hidden) {
+            wasHidden = true;
+        } else if (wasHidden && window.scrollY < 300) {
+            // User returned to tab after being away
+            setTimeout(() => {
+                if (!hasShown) showExitModal();
+            }, 2000); // 2 second delay
+        }
+    });
+    
+    // 4. IDLE + TOUCH ACTIVITY
+    let idleTime = 0;
+    let idleTimer;
+    
+    function resetIdle() {
+        idleTime = 0;
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            idleTime++;
+            if (idleTime > 1 && !hasShown && window.scrollY < 400) {
+                // User has been idle and is near top
+                showExitModal();
+            }
+        }, 25000); // 25 seconds
+    }
+    
+    // Reset idle on any user interaction
+    ['touchstart', 'touchmove', 'scroll', 'click'].forEach(event => {
+        window.addEventListener(event, resetIdle, { passive: true });
+    });
+    resetIdle();
+    
+    // Initialize triggers
+    setupBackButtonTrap();
     
     // Allow leaving after dismissing modal
     dismissBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         setTimeout(() => {
-            isLeavingAllowed = false; // Reset after a short time
+            isLeavingAllowed = false;
         }, 5000);
     });
     
 })();
 
-// Live chat function (customize based on your chat provider)
+// WhatsApp chat function
 function startLiveChat() {
     // Track the conversion
     if (typeof gtag !== 'undefined') {
-        gtag('event', 'exit_intent_chat_click', {
+        gtag('event', 'exit_intent_whatsapp_click', {
             event_category: 'conversion',
-            event_label: 'mobile_exit_to_chat'
+            event_label: 'mobile_exit_to_whatsapp'
         });
     }
     
@@ -467,24 +450,13 @@ function startLiveChat() {
     document.getElementById('exitModal').classList.remove('show');
     document.body.style.overflow = '';
     
-    // Initialize your chat widget here
-    // Examples for common chat providers:
+    // WhatsApp integration
+    const phoneNumber = '18336350131'; // Your business WhatsApp number (without + or spaces)
+    const message = encodeURIComponent("Hi! I'm interested in learning about debt relief options. Can you help me check my eligibility?");
     
-    // Intercom
-    // if (window.Intercom) window.Intercom('show');
+    // Create WhatsApp URL
+    const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
     
-    // Zendesk Chat
-    // if (window.$zopim) window.$zopim.livechat.window.show();
-    
-    // Drift
-    // if (window.drift) window.drift.api.sidebar.open();
-    
-    // LiveChat
-    // if (window.LC_API) window.LC_API.open_chat_window();
-    
-    // Or redirect to a chat page
-    window.location.href = '/chat';
-    
-    // Or show a phone number prominently
-    // alert('Call now: 833-635-0131 or text DEBT to 12345');
+    // Open WhatsApp (works on both mobile and desktop)
+    window.open(whatsappURL, '_blank');
 }
