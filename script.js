@@ -389,8 +389,56 @@ document.addEventListener('DOMContentLoaded', function() {
             // Go to the intended destination
             window.location.href = intendedDestination;
         } else {
-            // Fallback to browser back if no specific destination
-            window.history.back();
+            // Check if we're in a webview/app context
+            const isInApp = window.navigator.standalone || 
+                           window.matchMedia('(display-mode: standalone)').matches ||
+                           /MessengerWebView|FBAN|FBAV|Instagram|LinkedInApp|TwitterAndroid|WhatsApp/.test(navigator.userAgent) ||
+                           window.top !== window.self;
+            
+            if (isInApp) {
+                // Try multiple methods to close the webview
+                try {
+                    // For Messenger and Facebook webviews
+                    if (typeof MessengerExtensions !== 'undefined') {
+                        MessengerExtensions.requestCloseBrowser(function success() {
+                            console.log('Closed via MessengerExtensions');
+                        }, function error(err) {
+                            console.log('MessengerExtensions close failed', err);
+                            fallbackClose();
+                        });
+                    } else {
+                        fallbackClose();
+                    }
+                } catch (e) {
+                    fallbackClose();
+                }
+            } else {
+                // Regular browser - go back
+                window.history.back();
+            }
+        }
+        
+        function fallbackClose() {
+            // Try various methods to close the webview
+            try {
+                // Method 1: Close window if it was opened by script
+                if (window.opener) {
+                    window.close();
+                    return;
+                }
+                
+                // Method 2: Try to go to a blank page that might trigger app close
+                window.location.href = 'about:blank';
+                
+                // Method 3: Fallback to history back after a short delay
+                setTimeout(() => {
+                    window.history.back();
+                }, 100);
+                
+            } catch (e) {
+                // Final fallback
+                window.history.back();
+            }
         }
     });
     
