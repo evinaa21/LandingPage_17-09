@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hideExitModal();
         
         // Open Facebook Messenger for CuraDebt page
-        const messengerURL = 'https://m.me/curadebt';
+        const messengerURL = 'https://m.me/CuraDebt';
         window.open(messengerURL, '_blank');
     });
     
