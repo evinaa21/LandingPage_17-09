@@ -578,7 +578,6 @@ function startLiveChat() {
     
     const phoneNumber = '18336350131';
     const message = encodeURIComponent("Hi! I'm interested in learning about debt relief options. Can you help me check my eligibility?");
-    const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
-    
+        const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
         window.open(whatsappURL, '_blank');
     }
