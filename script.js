@@ -386,56 +386,26 @@ document.addEventListener('DOMContentLoaded', function() {
         isLeavingAllowed = true;
         hideExitModal();
 
-        const startHref = window.location.href;
         const ua = navigator.userAgent || '';
 
-        const backTokens = new Set(['browser_back','mobile_back','browser_close_or_navigate']);
-
-        const isLikelyUrl = (str) => {
-            try { const u = new URL(str, window.location.href); return !!u && !!u.href; } catch { return false; }
-        };
-
-        // 1) External/link destination we intercepted
-        if (intendedDestination && isLikelyUrl(intendedDestination) && !backTokens.has(intendedDestination)) {
+        // 1) If we have an external link destination, go there
+        if (intendedDestination && intendedDestination.startsWith('http') && !intendedDestination.includes(window.location.hostname)) {
             window.location.href = intendedDestination;
             return;
         }
 
-        // 2) Back intent - try going back first
-        if (backTokens.has(intendedDestination) && history.length > 1) {
-            const steps = Math.min(history.length - 1, Math.max(1, guardPushCount + 1));
-            history.go(-steps);
-            setTimeout(() => {
-                if (window.location.href === startHref) {
-                    attemptCloseOrBlank();
-                }
-            }, 500); // Increased timeout
-            return;
-        }
-
-        // 3) Use referrer if available and different from current page
-        if (document.referrer && document.referrer !== startHref && document.referrer !== window.location.href) {
-            try {
-                window.location.assign(document.referrer);
+        // 2) For chat/social media environments - go back to chat
+        // Check if we're in a social media webview
+        const isInAppBrowser = /FBAN|FBAV|FB_IAB|Messenger|Instagram|WhatsApp|TTWebView|TikTok/i.test(ua);
+        
+        if (isInAppBrowser) {
+            // Try to go back in history first (back to chat)
+            if (history.length > 1) {
+                history.back();
                 return;
-            } catch (e) {
-                console.log('Referrer navigation failed:', e);
             }
-        }
-
-        // 4) Direct fallbacks
-        attemptCloseOrBlank();
-
-        function attemptCloseOrBlank() {
-            // Try messenger extensions first
-            try {
-                if (typeof MessengerExtensions !== 'undefined') {
-                    MessengerExtensions.requestCloseBrowser(function(){}, function(){});
-                    return;
-                }
-            } catch (_) {}
-
-            // App-specific schemes
+            
+            // Fallback: Try app-specific schemes to return to chat
             if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { 
                 try { window.location.href = 'fb-messenger://'; return; } catch (_) {}
             }
@@ -448,8 +418,45 @@ document.addEventListener('DOMContentLoaded', function() {
             if (/TTWebView|TikTok/i.test(ua)) { 
                 try { window.location.href = 'snssdk1128://'; return; } catch (_) {}
             }
+        }
 
-            // Window close attempts
+        // 3) For regular browsers - try going back in history
+        if (history.length > 1) {
+            const steps = Math.min(history.length - 1, Math.max(1, guardPushCount + 1));
+            history.go(-steps);
+            
+            // If we're still on the same page after attempting to go back, try other methods
+            setTimeout(() => {
+                if (window.location.href === window.location.href) {
+                    attemptAlternativeExit();
+                }
+            }, 300);
+            return;
+        }
+
+        // 4) Use referrer if available
+        if (document.referrer && document.referrer !== window.location.href) {
+            try {
+                window.location.assign(document.referrer);
+                return;
+            } catch (e) {
+                console.log('Referrer navigation failed:', e);
+            }
+        }
+
+        // 5) Final fallbacks
+        attemptAlternativeExit();
+
+        function attemptAlternativeExit() {
+            // Try messenger extensions
+            try {
+                if (typeof MessengerExtensions !== 'undefined') {
+                    MessengerExtensions.requestCloseBrowser(function(){}, function(){});
+                    return;
+                }
+            } catch (_) {}
+
+            // Try to close the window
             try {
                 if (window.opener) { 
                     window.close(); 
@@ -462,22 +469,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.close();
             } catch (_) {}
 
-            // Final fallbacks
-            try { 
-                window.location.replace('about:blank'); 
-            } catch (_) { 
-                try {
-                    window.location.href = 'about:blank';
-                } catch (_) {
-                    // Last resort - go back if possible
-                    if (history.length > 1) {
-                        history.back();
-                    } else {
-                        // Hide the modal and let user manually navigate
-                        console.log('All exit methods failed - user must manually navigate');
-                    }
-                }
-            }
+            // Last resort - just hide the modal and let user navigate manually
+            console.log('Cannot navigate away - user must manually navigate');
+            // The modal is already hidden, so user can continue using the page
         }
     });
     
