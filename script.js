@@ -308,6 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let hasShown = sessionStorage.getItem(SHOWN_KEY) === '1';
     let isLeavingAllowed = false;
     let intendedDestination = null; // Store where user wanted to go
+    let guardPushCount = 0; // NEW: track how many guard states we add
     
     if (hasShown) {
         console.log('Exit modal already shown this session');
@@ -380,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Leave anyway button - robust exit (previous page, referrer, in-app close)
+    // Leave anyway button - robust exit (back/referrer/app webviews)
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
@@ -395,47 +396,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const isFB = /FBAN|FBAV|FB_IAB|Messenger/i.test(ua);
         const isIG = /Instagram/i.test(ua);
         const isTT = /TTWebView|TikTok/i.test(ua);
-        const isOtherApp = /Line|WhatsApp|WeChat|Telegram|Snapchat|Pinterest|Reddit|Discord|Slack|Teams|Zoom/i.test(ua);
-        const isInApp = isStandalone || isInIframe || isAndroidWV || isIOSWV || isFB || isIG || isTT || isOtherApp;
 
-        // 1) If user clicked a link we intercepted, go there directly
-        if (intendedDestination) {
+        const backTokens = new Set(['browser_back','mobile_back','browser_close_or_navigate']);
+
+        const isLikelyUrl = (str) => {
+            try { const u = new URL(str, window.location.href); return !!u && !!u.href; } catch { return false; }
+        };
+
+        // 1) External/link destination we intercepted
+        if (intendedDestination && isLikelyUrl(intendedDestination) && !backTokens.has(intendedDestination)) {
             window.location.href = intendedDestination;
             return;
         }
 
-        // 2) Try the referrer (most reliable "last page")
+        // 2) Back intent or no referrer but history exists
+        if (backTokens.has(intendedDestination) || (!document.referrer && history.length > 1)) {
+            const steps = Math.min(history.length - 1, Math.max(1, guardPushCount + 1));
+            history.go(-steps);
+            setTimeout(() => {
+                if (window.location.href === startHref) attemptCloseOrBlank();
+            }, 300);
+            return;
+        }
+
+        // 3) Use referrer if available
         if (document.referrer && document.referrer !== startHref) {
             window.location.assign(document.referrer);
             return;
         }
 
-        // 3) Handle our back-guard: if modal was shown via back, two guard states likely exist
-        if (history.length > 2 && hasShown) {
-            history.go(-2);
-        } else if (history.length > 1) {
-            history.back();
-        } else {
-            // No history to go back to
-            attemptCloseOrBlank();
-        }
-
-        // 4) If still here after a short delay, escalate
-        setTimeout(() => {
-            if (window.location.href === startHref) {
-                if (!document.referrer && history.length > 1) {
-                    history.back();
-                    setTimeout(() => {
-                        if (window.location.href === startHref) attemptCloseOrBlank();
-                    }, 250);
-                } else {
-                    attemptCloseOrBlank();
-                }
-            }
-        }, 250);
+        // 4) Fallbacks
+        attemptCloseOrBlank();
 
         function attemptCloseOrBlank() {
-            // Try native close for Messenger if available
             try {
                 if (typeof MessengerExtensions !== 'undefined') {
                     MessengerExtensions.requestCloseBrowser(function(){}, function(){});
@@ -443,29 +436,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (_) {}
 
-            // Try deep links to bounce back to the host app
-            if (isFB) { window.location.href = 'fb-messenger://'; return; }
-            if (isIG) { window.location.href = 'instagram://'; return; }
+            if (/FBAN|FBAV|FB_IAB|Messenger/i.test(ua)) { window.location.href = 'fb-messenger://'; return; }
+            if (/Instagram/i.test(ua)) { window.location.href = 'instagram://'; return; }
             if (/WhatsApp/i.test(ua)) { window.location.href = 'whatsapp://app'; return; }
-            if (isTT) { window.location.href = 'snssdk1128://'; return; }
+            if (/TTWebView|TikTok/i.test(ua)) { window.location.href = 'snssdk1128://'; return; }
 
-            // Try to close the window if it was opened by another window
             try {
-                if (window.opener) {
-                    window.close();
-                    return;
-                }
-                // iOS/Safari trick
-                window.open('', '_self');
-                window.close();
+                if (window.opener) { window.close(); return; }
+                window.open('', '_self'); window.close();
             } catch (_) {}
 
-            // Final fallback: blank out
-            try {
-                window.location.replace('about:blank');
-            } catch (_) {
-                history.go(-1);
-            }
+            try { window.location.replace('about:blank'); }
+            catch (_) { if (history.length > 1) history.back(); }
         }
     });
     
@@ -513,17 +495,18 @@ document.addEventListener('DOMContentLoaded', function() {
         function setupBackTrap() {
             if (backTrapActive) return;
             backTrapActive = true;
-            
+
             setTimeout(() => {
                 const currentState = history.state;
                 history.pushState({ exitGuard: true, original: currentState }, '');
-                
+                guardPushCount++; // NEW
                 window.addEventListener('popstate', function backHandler(e) {
                     if (!isLeavingAllowed && !hasShown && e.state && e.state.exitGuard) {
                         console.log('Back button - showing modal');
                         captureIntendedDestination('browser_back');
                         showExitModal();
                         history.pushState({ exitGuard: true, original: currentState }, '');
+                        guardPushCount++; // NEW
                     }
                 });
             }, 1000);
@@ -590,26 +573,26 @@ document.addEventListener('DOMContentLoaded', function() {
         function setupMobileBack() {
             if (mobileBackActive) return;
             mobileBackActive = true;
-            
+
             exitIntentState = 'exit_intent_' + Date.now();
-            
+
             setTimeout(() => {
                 history.pushState({ exitGuard: true, id: exitIntentState }, '');
-                console.log('Mobile back trap set with ID:', exitIntentState);
-                
+                guardPushCount++; // NEW
                 window.addEventListener('popstate', function mobileBackHandler(e) {
                     console.log('Popstate event:', e.state);
-                    
+
                     if (!isLeavingAllowed && !hasShown) {
                         if (!e.state || (e.state && e.state.id === exitIntentState)) {
                             console.log('Mobile back detected - showing modal');
                             captureIntendedDestination('mobile_back');
                             showExitModal();
                             history.pushState({ exitGuard: true, id: exitIntentState }, '');
+                            guardPushCount++; // NEW
                             return;
                         }
                     }
-                    
+
                     if (isLeavingAllowed) {
                         console.log('User allowed to leave');
                         return;
