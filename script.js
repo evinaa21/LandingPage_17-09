@@ -298,9 +298,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const dismissBtn = document.getElementById('exitDismiss');
     const leaveBtn = document.getElementById('exitLeave');
     const messengerBtn = document.getElementById('messengerBtn');
-    const crispBtn = document.getElementById('crispBtn');
     
-    if (!closeBtn || !dismissBtn || !leaveBtn || !messengerBtn || !crispBtn) {
+    if (!closeBtn || !dismissBtn || !leaveBtn || !messengerBtn) {
         console.log('Modal buttons not found');
         return;
     }
@@ -339,9 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     }
     
-    closeBtn.addEventListener('click', hideExitModal);
-    dismissBtn.addEventListener('click', hideExitModal);
-    
+    // Messenger Chat button (Primary/Highlighted)
     messengerBtn.addEventListener('click', () => {
         if (typeof gtag !== 'undefined') {
             gtag('event', 'exit_intent_messenger_click', {
@@ -352,23 +349,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         hideExitModal();
         
- 
-
+        // Open Facebook Messenger for CuraDebt page
         const messengerURL = 'https://m.me/curadebt';
         window.open(messengerURL, '_blank');
-    });
-    
-    crispBtn.addEventListener('click', () => {
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'exit_intent_crisp_click', {
-                event_category: 'conversion',
-                event_label: 'exit_to_crisp'
-            });
-        }
-        
-        hideExitModal();
-        
-        window.open('https://www.curadebt.com/chat', '_blank');
     });
     
     // Leave anyway button
