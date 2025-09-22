@@ -1329,7 +1329,7 @@ body {
     }
 }
 
-/* Add these styles to your CSS */
+
 .exit-modal {
     position: fixed;
     inset: 0;
@@ -1397,7 +1397,7 @@ body {
 .exit-modal__actions {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.75rem;
     margin-bottom: 1rem;
 }
 
@@ -1425,22 +1425,62 @@ body {
 
 .exit-modal .btn--secondary {
     background: #f3f4f6;
-    color: #6b7280;
-    font-size: 0.9rem;
-    padding: 0.7rem 1.5rem;
+    color: #374151;
+    font-size: 0.95rem;
+    padding: 0.8rem 1.5rem;
+    border: 1px solid #d1d5db;
 }
 
 .exit-modal .btn--link {
     background: transparent;
-    color: #6b7280;
+    color: #9ca3af;
     text-decoration: underline;
     font-size: 0.85rem;
     padding: 0.5rem 1rem;
+    border: none;
 }
 
-.exit-modal .btn--link:hover {
+
+.exit-modal__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+
+.exit-modal .btn--highlighted {
+    background: linear-gradient(135deg, #1877f2 0%, #166fe5 100%);
+    color: white;
+    font-size: 1.2rem;
+    padding: 1.1rem 1.5rem;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(24, 119, 242, 0.4);
+    border: 2px solid #1877f2;
+}
+
+.exit-modal .btn--highlighted:hover {
+    background: linear-gradient(135deg, #166fe5 0%, #1464d8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(24, 119, 242, 0.5);
+}
+
+
+.exit-modal .btn--secondary {
+    background: #f3f4f6;
     color: #374151;
-    text-decoration: none;
+    font-size: 0.95rem;
+    padding: 0.8rem 1.5rem;
+    border: 1px solid #d1d5db;
+}
+
+.exit-modal .btn--link {
+    background: transparent;
+    color: #9ca3af;
+    text-decoration: underline;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border: none;
 }
 
 @media (max-width: 480px) {

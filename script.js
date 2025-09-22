@@ -339,11 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     }
     
-    // Event listeners for all buttons
     closeBtn.addEventListener('click', hideExitModal);
     dismissBtn.addEventListener('click', hideExitModal);
     
-    // Messenger Chat button
     messengerBtn.addEventListener('click', () => {
         if (typeof gtag !== 'undefined') {
             gtag('event', 'exit_intent_messenger_click', {
@@ -354,13 +352,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         hideExitModal();
         
-        // Open Facebook Messenger for CuraDebt page
-        // Replace 'curadebt' with actual Facebook page username
+ 
+
         const messengerURL = 'https://m.me/curadebt';
         window.open(messengerURL, '_blank');
     });
     
-    // Crisp Chat button
     crispBtn.addEventListener('click', () => {
         if (typeof gtag !== 'undefined') {
             gtag('event', 'exit_intent_crisp_click', {
@@ -371,7 +368,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         hideExitModal();
         
-        // Open CuraDebt website chat page
         window.open('https://www.curadebt.com/chat', '_blank');
     });
     
@@ -382,7 +378,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.history.back();
     });
     
-    // Click outside to close
     modal.addEventListener('click', (e) => {
         if (e.target === modal || e.target.classList.contains('exit-modal__overlay')) {
             hideExitModal();
@@ -484,7 +479,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // MOBILE TRIGGERS (keep existing code)
     else {
         console.log('Setting up mobile triggers');
         
