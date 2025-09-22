@@ -286,23 +286,41 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 
-// Add this JavaScript to your script.js or in a separate script tag
+// CORRECTED exit-intent system
 (function() {
+    // Check if modal exists first
     const modal = document.getElementById('exitModal');
+    if (!modal) {
+        console.log('Exit modal not found');
+        return;
+    }
+    
     const closeBtn = document.getElementById('exitClose');
     const dismissBtn = document.getElementById('exitDismiss');
     
-    // Session tracking to show only once
+    if (!closeBtn || !dismissBtn) {
+        console.log('Modal buttons not found');
+        return;
+    }
+    
+    // Session tracking
     const SHOWN_KEY = 'curadebt_exit_shown_v1';
     let hasShown = sessionStorage.getItem(SHOWN_KEY) === '1';
     let isLeavingAllowed = false;
     
-    // Don't show if already shown this session
-    if (hasShown) return;
+    if (hasShown) {
+        console.log('Exit modal already shown this session');
+        return;
+    }
+    
+    // Device detection
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    console.log('Device detected as:', isMobile ? 'Mobile' : 'Desktop');
     
     function showExitModal() {
         if (hasShown) return;
         
+        console.log('Showing exit modal');
         hasShown = true;
         sessionStorage.setItem(SHOWN_KEY, '1');
         
@@ -310,25 +328,19 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
         
-        // Focus the first button for accessibility
-        modal.querySelector('.btn').focus();
-        
-        // Track the popup show event (for analytics)
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'exit_intent_popup_shown', {
-                event_category: 'engagement',
-                event_label: 'mobile_exit_intent'
-            });
-        }
+        // Focus first button
+        const firstBtn = modal.querySelector('.btn');
+        if (firstBtn) firstBtn.focus();
     }
     
     function hideExitModal() {
+        console.log('Hiding exit modal');
         modal.classList.remove('show');
         modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
     }
     
-    // Close modal handlers
+    // Event listeners
     closeBtn.addEventListener('click', hideExitModal);
     dismissBtn.addEventListener('click', hideExitModal);
     
@@ -339,94 +351,187 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Escape key to close
+    // Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.classList.contains('show')) {
             hideExitModal();
         }
     });
     
-    // 1. BACK BUTTON EXIT INTENT (Most reliable on mobile)
-    function setupBackButtonTrap() {
-        const dummyState = { exitGuard: true };
-        history.pushState(dummyState, '');
+    // DESKTOP TRIGGERS
+    if (!isMobile) {
+        console.log('Setting up desktop triggers');
         
-        window.addEventListener('popstate', function(e) {
-            if (!isLeavingAllowed && !hasShown) {
+        // 1. FIXED Mouse leave detection
+        let mouseLeaveTimeout;
+        document.documentElement.addEventListener('mouseleave', (e) => {
+            if (hasShown) return;
+            
+            // Only trigger if mouse leaves through top
+            if (e.clientY <= 10) {
+                clearTimeout(mouseLeaveTimeout);
+                mouseLeaveTimeout = setTimeout(() => {
+                    console.log('Mouse left through top - showing modal');
+                    showExitModal();
+                }, 200);
+            }
+        });
+        
+        // Cancel if mouse re-enters quickly
+        document.documentElement.addEventListener('mouseenter', () => {
+            clearTimeout(mouseLeaveTimeout);
+        });
+        
+        // 2. FIXED Back button (avoid conflict with main script)
+        let backTrapActive = false;
+        function setupBackTrap() {
+            if (backTrapActive) return;
+            backTrapActive = true;
+            
+            // Wait a bit to avoid conflicts with main script
+            setTimeout(() => {
+                const currentState = history.state;
+                history.pushState({ exitGuard: true, original: currentState }, '');
+                
+                window.addEventListener('popstate', function backHandler(e) {
+                    if (!isLeavingAllowed && !hasShown && e.state && e.state.exitGuard) {
+                        console.log('Back button - showing modal');
+                        showExitModal();
+                        // Restore the state
+                        history.pushState({ exitGuard: true, original: currentState }, '');
+                    }
+                });
+            }, 1000);
+        }
+        setupBackTrap();
+        
+        // 3. Time trigger - 20 seconds
+        setTimeout(() => {
+            if (!hasShown) {
+                console.log('20 second timer - showing modal');
                 showExitModal();
-                history.pushState(dummyState, '');
+            }
+        }, 20000);
+        
+        // 4. SIMPLIFIED Idle detection
+        let idleTimer;
+        let isIdle = false;
+        
+        function resetIdle() {
+            clearTimeout(idleTimer);
+            
+            if (isIdle && !hasShown) {
+                console.log('Activity after idle - showing modal');
+                showExitModal();
+                return;
+            }
+            
+            isIdle = false;
+            idleTimer = setTimeout(() => {
+                isIdle = true;
+                console.log('User idle');
+            }, 15000);
+        }
+        
+        ['mousemove', 'keydown', 'scroll'].forEach(event => {
+            document.addEventListener(event, resetIdle, { passive: true });
+        });
+        resetIdle();
+        
+        // 5. Tab visibility
+        let hasLeftTab = false;
+        document.addEventListener('visibilitychange', () => {
+            if (hasShown) return;
+            
+            if (document.hidden) {
+                hasLeftTab = true;
+                console.log('Tab hidden');
+            } else if (hasLeftTab) {
+                console.log('Tab visible - showing modal');
+                setTimeout(() => {
+                    if (!hasShown) showExitModal();
+                }, 1000);
             }
         });
     }
     
-    // 2. IMPROVED MOBILE SCROLL DETECTION
-    let touchStartY = 0;
-    let scrollDirection = 'down';
-    let rapidScrollCount = 0;
-    
-    // Touch-based scroll detection (more accurate for mobile)
-    window.addEventListener('touchstart', (e) => {
-        touchStartY = e.touches[0].clientY;
-    }, { passive: true });
-    
-    window.addEventListener('touchmove', (e) => {
-        if (hasShown) return;
+    // MOBILE TRIGGERS
+    else {
+        console.log('Setting up mobile triggers');
         
-        const touchY = e.touches[0].clientY;
-        const scrollY = window.scrollY;
-        
-        // Detect upward swipe motion near top of page
-        if (scrollY < 200 && touchY > touchStartY + 30) {
-            rapidScrollCount++;
-            if (rapidScrollCount > 2) { // Multiple rapid upward swipes
-                showExitModal();
-            }
-        } else {
-            rapidScrollCount = 0;
-        }
-    }, { passive: true });
-    
-    // 3. PAGE VISIBILITY (when user switches apps/tabs)
-    let wasHidden = false;
-    document.addEventListener('visibilitychange', () => {
-        if (hasShown) return;
-        
-        if (document.hidden) {
-            wasHidden = true;
-        } else if (wasHidden && window.scrollY < 300) {
-            // User returned to tab after being away
+        // 1. Back button for mobile
+        let mobileBackActive = false;
+        function setupMobileBack() {
+            if (mobileBackActive) return;
+            mobileBackActive = true;
+            
             setTimeout(() => {
-                if (!hasShown) showExitModal();
-            }, 2000); // 2 second delay
+                const currentState = history.state;
+                history.pushState({ exitGuard: true, mobile: true }, '');
+                
+                window.addEventListener('popstate', function mobileBackHandler(e) {
+                    if (!isLeavingAllowed && !hasShown) {
+                        console.log('Mobile back - showing modal');
+                        showExitModal();
+                        history.pushState({ exitGuard: true, mobile: true }, '');
+                    }
+                });
+            }, 2000); // Longer delay for mobile
         }
-    });
-    
-    // 4. IDLE + TOUCH ACTIVITY
-    let idleTime = 0;
-    let idleTimer;
-    
-    function resetIdle() {
-        idleTime = 0;
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-            idleTime++;
-            if (idleTime > 1 && !hasShown && window.scrollY < 400) {
-                // User has been idle and is near top
+        setupMobileBack();
+        
+        // 2. Touch scroll detection
+        let touchStartY = 0;
+        let scrollUpCount = 0;
+        
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        window.addEventListener('touchmove', (e) => {
+            if (hasShown) return;
+            
+            const touchY = e.touches[0].clientY;
+            const scrollY = window.scrollY;
+            
+            if (scrollY < 100 && touchY > touchStartY + 40) {
+                scrollUpCount++;
+                console.log('Upward swipe:', scrollUpCount);
+                if (scrollUpCount > 2) {
+                    console.log('Multiple swipes - showing modal');
+                    showExitModal();
+                }
+            } else {
+                scrollUpCount = 0;
+            }
+        }, { passive: true });
+        
+        // 3. Time trigger - 25 seconds for mobile
+        setTimeout(() => {
+            if (!hasShown) {
+                console.log('Mobile 25s timer - showing modal');
                 showExitModal();
             }
-        }, 25000); // 25 seconds
+        }, 25000);
+        
+        // 4. App switching
+        let wasHidden = false;
+        document.addEventListener('visibilitychange', () => {
+            if (hasShown) return;
+            
+            if (document.hidden) {
+                wasHidden = true;
+                console.log('App hidden');
+            } else if (wasHidden) {
+                console.log('App visible - showing modal');
+                setTimeout(() => {
+                    if (!hasShown) showExitModal();
+                }, 2000);
+            }
+        });
     }
     
-    // Reset idle on any user interaction
-    ['touchstart', 'touchmove', 'scroll', 'click'].forEach(event => {
-        window.addEventListener(event, resetIdle, { passive: true });
-    });
-    resetIdle();
-    
-    // Initialize triggers
-    setupBackButtonTrap();
-    
-    // Allow leaving after dismissing modal
+    // Allow leaving after dismissing
     dismissBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         setTimeout(() => {
@@ -434,11 +539,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
+    console.log('Exit intent system initialized');
 })();
 
-// WhatsApp chat function
+// WhatsApp chat function (unchanged)
 function startLiveChat() {
-    // Track the conversion
     if (typeof gtag !== 'undefined') {
         gtag('event', 'exit_intent_whatsapp_click', {
             event_category: 'conversion',
@@ -446,17 +551,12 @@ function startLiveChat() {
         });
     }
     
-    // Hide the modal
     document.getElementById('exitModal').classList.remove('show');
     document.body.style.overflow = '';
     
-    // WhatsApp integration
-    const phoneNumber = '18336350131'; // Your business WhatsApp number (without + or spaces)
+    const phoneNumber = '18336350131';
     const message = encodeURIComponent("Hi! I'm interested in learning about debt relief options. Can you help me check my eligibility?");
-    
-    // Create WhatsApp URL
     const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
     
-    // Open WhatsApp (works on both mobile and desktop)
     window.open(whatsappURL, '_blank');
 }
