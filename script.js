@@ -288,7 +288,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 (function() {
-    
     const modal = document.getElementById('exitModal');
     if (!modal) {
         console.log('Exit modal not found');
@@ -298,12 +297,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeBtn = document.getElementById('exitClose');
     const dismissBtn = document.getElementById('exitDismiss');
     const leaveBtn = document.getElementById('exitLeave');
+    const messengerBtn = document.getElementById('messengerBtn');
+    const crispBtn = document.getElementById('crispBtn');
     
-    if (!closeBtn || !dismissBtn) {
+    if (!closeBtn || !dismissBtn || !leaveBtn || !messengerBtn || !crispBtn) {
         console.log('Modal buttons not found');
         return;
     }
-    
     
     const SHOWN_KEY = 'curadebt_exit_shown_v1';
     let hasShown = sessionStorage.getItem(SHOWN_KEY) === '1';
@@ -313,7 +313,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Exit modal already shown this session');
         return;
     }
-    
     
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
     console.log('Device detected as:', isMobile ? 'Mobile' : 'Desktop');
@@ -329,7 +328,6 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
         
-        
         const firstBtn = modal.querySelector('.btn');
         if (firstBtn) firstBtn.focus();
     }
@@ -341,33 +339,70 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     }
     
-    
+    // Event listeners for all buttons
     closeBtn.addEventListener('click', hideExitModal);
     dismissBtn.addEventListener('click', hideExitModal);
     
+    // Messenger Chat button
+    messengerBtn.addEventListener('click', () => {
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'exit_intent_messenger_click', {
+                event_category: 'conversion',
+                event_label: 'exit_to_messenger'
+            });
+        }
+        
+        hideExitModal();
+        
+        // Open Facebook Messenger for CuraDebt page
+        // Replace 'curadebt' with actual Facebook page username
+        const messengerURL = 'https://m.me/curadebt';
+        window.open(messengerURL, '_blank');
+    });
     
+    // Crisp Chat button
+    crispBtn.addEventListener('click', () => {
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'exit_intent_crisp_click', {
+                event_category: 'conversion',
+                event_label: 'exit_to_crisp'
+            });
+        }
+        
+        hideExitModal();
+        
+        // Open CuraDebt website chat page
+        window.open('https://www.curadebt.com/chat', '_blank');
+    });
+    
+    // Leave anyway button
+    leaveBtn.addEventListener('click', () => {
+        isLeavingAllowed = true;
+        hideExitModal();
+        window.history.back();
+    });
+    
+    // Click outside to close
     modal.addEventListener('click', (e) => {
         if (e.target === modal || e.target.classList.contains('exit-modal__overlay')) {
             hideExitModal();
         }
     });
     
-    
+    // Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.classList.contains('show')) {
             hideExitModal();
         }
     });
     
-    
+    // DESKTOP TRIGGERS (keep existing code)
     if (!isMobile) {
         console.log('Setting up desktop triggers');
-        
         
         let mouseLeaveTimeout;
         document.documentElement.addEventListener('mouseleave', (e) => {
             if (hasShown) return;
-            
             
             if (e.clientY <= 10) {
                 clearTimeout(mouseLeaveTimeout);
@@ -378,17 +413,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        
         document.documentElement.addEventListener('mouseenter', () => {
             clearTimeout(mouseLeaveTimeout);
         });
-        
         
         let backTrapActive = false;
         function setupBackTrap() {
             if (backTrapActive) return;
             backTrapActive = true;
-            
             
             setTimeout(() => {
                 const currentState = history.state;
@@ -398,7 +430,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!isLeavingAllowed && !hasShown && e.state && e.state.exitGuard) {
                         console.log('Back button - showing modal');
                         showExitModal();
-                        
                         history.pushState({ exitGuard: true, original: currentState }, '');
                     }
                 });
@@ -406,14 +437,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         setupBackTrap();
         
-        
         setTimeout(() => {
             if (!hasShown) {
                 console.log('20 second timer - showing modal');
                 showExitModal();
             }
         }, 20000);
-        
         
         let idleTimer;
         let isIdle = false;
@@ -439,7 +468,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         resetIdle();
         
-        
         let hasLeftTab = false;
         document.addEventListener('visibilitychange', () => {
             if (hasShown) return;
@@ -456,10 +484,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    
+    // MOBILE TRIGGERS (keep existing code)
     else {
         console.log('Setting up mobile triggers');
-        
         
         let mobileBackActive = false;
         let exitIntentState = null;
@@ -468,41 +495,32 @@ document.addEventListener('DOMContentLoaded', function() {
             if (mobileBackActive) return;
             mobileBackActive = true;
             
-            
             exitIntentState = 'exit_intent_' + Date.now();
             
-            
             setTimeout(() => {
-                
                 history.pushState({ exitGuard: true, id: exitIntentState }, '');
                 console.log('Mobile back trap set with ID:', exitIntentState);
-                
                 
                 window.addEventListener('popstate', function mobileBackHandler(e) {
                     console.log('Popstate event:', e.state);
                     
-                    
                     if (!isLeavingAllowed && !hasShown) {
-                        
                         if (!e.state || (e.state && e.state.id === exitIntentState)) {
                             console.log('Mobile back detected - showing modal');
                             showExitModal();
-                            
                             history.pushState({ exitGuard: true, id: exitIntentState }, '');
                             return;
                         }
                     }
-                    
                     
                     if (isLeavingAllowed) {
                         console.log('User allowed to leave');
                         return;
                     }
                 });
-            }, 3000); 
+            }, 3000);
         }
         setupMobileBack();
-        
         
         let touchStartY = 0;
         let scrollUpCount = 0;
@@ -529,14 +547,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, { passive: true });
         
-        
         setTimeout(() => {
             if (!hasShown) {
                 console.log('Mobile 25s timer - showing modal');
                 showExitModal();
             }
         }, 25000);
-        
         
         let wasHidden = false;
         document.addEventListener('visibilitychange', () => {
@@ -554,7 +570,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    
     dismissBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         setTimeout(() => {
@@ -562,53 +577,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    leaveBtn.addEventListener('click', () => {
-        isLeavingAllowed = true;
-        hideExitModal();
-        // Actually let them leave the site
-        window.history.back();
-    });
-    
     console.log('Exit intent system initialized');
 })();
-
-
-function startLiveChat() {
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'exit_intent_chat_click', {
-            event_category: 'conversion',
-            event_label: 'exit_intent_to_chat'
-        });
-    }
-   
-    document.getElementById('exitModal').classList.remove('show');
-    document.body.style.overflow = '';
-    
- 
-    if (typeof MessengerExtensions !== 'undefined') {
-       
-        MessengerExtensions.requestCloseBrowser(function success() {
-            
-        }, function error(err) {
-            
-            openCrispChat();
-        });
-    } else if (window.location.hostname.includes('curadebt.com')) {
-        
-        openCrispChat();
-    } else {
-        
-        window.open('https://www.curadebt.com/chat', '_blank');
-    }
-}
-
-
-function openCrispChat() {
-    if (typeof $crisp !== 'undefined') {
-        $crisp.push(["do", "chat:open"]);
-        $crisp.push(["do", "message:send", ["text", "Hi! I'm interested in learning about debt relief options. Can you help me check my eligibility?"]]);
-    } else {
-     
-        window.open('https://www.curadebt.com/contact', '_blank');
-    }
-}
