@@ -307,6 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const SHOWN_KEY = 'curadebt_exit_shown_v1';
     let hasShown = sessionStorage.getItem(SHOWN_KEY) === '1';
     let isLeavingAllowed = false;
+    let intendedDestination = null; // Store where user wanted to go
     
     if (hasShown) {
         console.log('Exit modal already shown this session');
@@ -315,6 +316,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
     console.log('Device detected as:', isMobile ? 'Mobile' : 'Desktop');
+    
+    // Capture intended destination when user tries to leave
+    function captureIntendedDestination(destination) {
+        intendedDestination = destination;
+        console.log('Captured intended destination:', destination);
+    }
+    
+    // Handle clicks on external links
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (link && link.href && !link.href.startsWith(window.location.origin) && !link.href.startsWith('tel:') && !link.href.startsWith('mailto:')) {
+            if (!hasShown && !isLeavingAllowed) {
+                e.preventDefault();
+                captureIntendedDestination(link.href);
+                showExitModal();
+            }
+        }
+    });
     
     function showExitModal() {
         if (hasShown) return;
@@ -338,7 +357,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     }
     
-  
     messengerBtn.addEventListener('click', () => {
         if (typeof gtag !== 'undefined') {
             gtag('event', 'exit_intent_messenger_click', {
@@ -348,26 +366,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         hideExitModal();
-        
-       
         const messengerURL = 'https://m.me/CuraDebt';
         window.open(messengerURL, '_blank');
     });
     
-    // Dismiss button
+    // Dismiss button - return to page
     dismissBtn.addEventListener('click', () => {
         hideExitModal();
         isLeavingAllowed = true;
+        intendedDestination = null; // Clear the destination
         setTimeout(() => {
             isLeavingAllowed = false;
         }, 5000);
     });
     
-    // Leave anyway button
+    // Leave anyway button - go to intended destination or back
     leaveBtn.addEventListener('click', () => {
         isLeavingAllowed = true;
         hideExitModal();
-        window.history.back();
+        
+        if (intendedDestination) {
+            // Go to the intended destination
+            window.location.href = intendedDestination;
+        } else {
+            // Fallback to browser back if no specific destination
+            window.history.back();
+        }
     });
     
     // Add close button functionality
@@ -388,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // DESKTOP TRIGGERS (keep existing code)
+    // DESKTOP TRIGGERS
     if (!isMobile) {
         console.log('Setting up desktop triggers');
         
@@ -400,6 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearTimeout(mouseLeaveTimeout);
                 mouseLeaveTimeout = setTimeout(() => {
                     console.log('Mouse left through top - showing modal');
+                    captureIntendedDestination('browser_close_or_navigate');
                     showExitModal();
                 }, 200);
             }
@@ -421,6 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.addEventListener('popstate', function backHandler(e) {
                     if (!isLeavingAllowed && !hasShown && e.state && e.state.exitGuard) {
                         console.log('Back button - showing modal');
+                        captureIntendedDestination('browser_back');
                         showExitModal();
                         history.pushState({ exitGuard: true, original: currentState }, '');
                     }
@@ -429,6 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         setupBackTrap();
         
+        // Timer trigger
         setTimeout(() => {
             if (!hasShown) {
                 console.log('20 second timer - showing modal');
@@ -436,6 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 20000);
         
+        // Idle detection
         let idleTimer;
         let isIdle = false;
         
@@ -460,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         resetIdle();
         
+        // Tab visibility
         let hasLeftTab = false;
         document.addEventListener('visibilitychange', () => {
             if (hasShown) return;
@@ -476,6 +505,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // MOBILE TRIGGERS
     else {
         console.log('Setting up mobile triggers');
         
@@ -498,6 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!isLeavingAllowed && !hasShown) {
                         if (!e.state || (e.state && e.state.id === exitIntentState)) {
                             console.log('Mobile back detected - showing modal');
+                            captureIntendedDestination('mobile_back');
                             showExitModal();
                             history.pushState({ exitGuard: true, id: exitIntentState }, '');
                             return;
@@ -513,6 +544,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         setupMobileBack();
         
+        // Touch/swipe detection
         let touchStartY = 0;
         let scrollUpCount = 0;
         
@@ -538,6 +570,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, { passive: true });
         
+        // Timer
         setTimeout(() => {
             if (!hasShown) {
                 console.log('Mobile 25s timer - showing modal');
@@ -545,6 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 25000);
         
+        // App visibility
         let wasHidden = false;
         document.addEventListener('visibilitychange', () => {
             if (hasShown) return;
